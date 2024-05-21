@@ -1,1 +1,0 @@
-A directory to save model.
