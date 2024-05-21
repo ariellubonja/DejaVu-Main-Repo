@@ -413,11 +413,15 @@ class GPTBlock(OPTDecoderLayer):
         except:
             print("Cannot load from <model_name>. The model is randomly initialized.")
 
+        base_path = "/home/user/models"
+        model_path = os.path.join(base_path, model_path)
+        # model_size = "125m"
+
         module.layer_index = layer_index
         module.self_attn.layer_index = layer_index
         module.fp_i = 0
         module.fp_mlp_query = np.memmap(
-            f"/lustre/fsw/nvresearch/ldm/diffusion/data/175b_c4/mlp_sp_x_{module.layer_index}.mmap",
+            os.path.join(model_path, f"mlp_sp_x_{module.layer_index}.mmap"),
             dtype="float16",
             mode="w+",
             shape=(
@@ -426,7 +430,7 @@ class GPTBlock(OPTDecoderLayer):
             ),
         )
         module.fp_att_query = np.memmap(
-            f"/lustre/fsw/nvresearch/ldm/diffusion/data/175b_c4/att_sp_x_{module.layer_index}.mmap",
+            os.path.join(model_path, f"att_sp_x_{module.layer_index}.mmap"),
             dtype="float16",
             mode="w+",
             shape=(
@@ -435,7 +439,7 @@ class GPTBlock(OPTDecoderLayer):
             ),
         )
         module.fp_label = np.memmap(
-            f"/lustre/fsw/nvresearch/ldm/diffusion/visualization/175b/mlp_label_{module.layer_index}.mmap",
+            os.path.join(model_path, f"visualization/mlp_label_{module.layer_index}.mmap"),
             dtype="float16",
             mode="w+",
             shape=(
@@ -445,7 +449,7 @@ class GPTBlock(OPTDecoderLayer):
         )
         module.self_attn.fp_i = 0
         module.self_attn.fp_label = np.memmap(
-            f"/lustre/fsw/nvresearch/ldm/diffusion/visualization/175b/score_norm_{module.layer_index}.mmap",
+            os.path.join(model_path, f"visualization/score_norm_{module.layer_index}.mmap"),
             dtype="float16",
             mode="w+",
             shape=(

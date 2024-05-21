@@ -5,20 +5,24 @@ import argparse
 import tqdm
 
 from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
+from modules import hf_opt_module_save
+import numpy as np
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert HF checkpoints')
-    parser.add_argument('--model-name', type=str, default='facebook/opt-1.3b', 
+    parser.add_argument('--model-name', type=str, default='facebook/opt-125m', 
                         help='model-name')
-    parser.add_argument('--save-path', type=str, default='./pretrained_models', 
+    parser.add_argument('--save-path', type=str, default='./pretrained_models',
                         help='model-name')
     args = parser.parse_args()
-    
+
+    output_path = os.path.join(args.save_path, args.model_name)
+
     config = AutoConfig.from_pretrained(args.model_name)
-    config.save_pretrained(args.save_path)
+    config.save_pretrained(output_path)  # save to pretrained_models/<model-name>
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    tokenizer.save_pretrained(args.save_path)
+    tokenizer.save_pretrained(output_path)
     
     model = AutoModelForCausalLM.from_pretrained(args.model_name)
     
@@ -27,7 +31,7 @@ if __name__ == '__main__':
     item = {}
     item['embed_tokens.weight'] = model.state_dict()['model.decoder.embed_tokens.weight']
     item['embed_positions.weight'] = model.state_dict()['model.decoder.embed_positions.weight']
-    torch.save(item, os.path.join(args.save_path, 'pytorch_embs.pt'))
+    torch.save(item, os.path.join(output_path, 'pytorch_embs.pt'))
 
     ## out
     print('saving lm_head')
@@ -35,7 +39,7 @@ if __name__ == '__main__':
     item['lm_head.weight'] = model.state_dict()['model.decoder.embed_tokens.weight']
     item['final_layer_norm.weight'] = model.state_dict()['model.decoder.final_layer_norm.weight']
     item['final_layer_norm.bias'] = model.state_dict()['model.decoder.final_layer_norm.bias']
-    torch.save(item, os.path.join(args.save_path, 'pytorch_lm_head.pt'))
+    torch.save(item, os.path.join(output_path, 'pytorch_lm_head.pt'))
     
     print('saving layers')
     for i in tqdm.tqdm(range(0, config.num_hidden_layers)):
@@ -49,7 +53,7 @@ if __name__ == '__main__':
             new_k = k.replace(layer_prefix, '')
             item[new_k] = v
 
-        torch.save(item, os.path.join(args.save_path, f'pytorch_{i}.pt'))
+        torch.save(item, os.path.join(output_path, f'pytorch_{i}.pt'))
 
         del item
     

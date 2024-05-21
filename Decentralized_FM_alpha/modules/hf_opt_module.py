@@ -394,14 +394,21 @@ class GPTBlock(OPTDecoderLayer):
 
         ######
         module.layer_index = layer_index
-        # module.fp_att_residual = np.memmap(f"/mnt/workspace/observation/175b/att_residual_{module.layer_index}.mmap", dtype='float16', mode='w+', shape=(20 * 2048, config.hidden_size,))
-        # module.fp_att_in = np.memmap(f"/mnt/workspace/observation/175b/att_in_{module.layer_index}.mmap", dtype='float16', mode='w+', shape=(20 * 2048, config.hidden_size,))
-        # module.fp_mlp_residual = np.memmap(f"/mnt/workspace/observation/175b/mlp_residual_{module.layer_index}.mmap", dtype='float16', mode='w+', shape=(20 * 2048, config.hidden_size,))
-        # module.fp_mlp_in = np.memmap(f"/mnt/workspace/observation/175b/mlp_in_{module.layer_index}.mmap", dtype='float16', mode='w+', shape=(20 * 2048, config.hidden_size,))
-        # module.fp_out = np.memmap(f"/mnt/workspace/observation/175b/out_{module.layer_index}.mmap", dtype='float16', mode='w+', shape=(20 * 2048, config.hidden_size,))
-        # module.fp_query = np.memmap(f"/mnt/workspace/data/175b_c4/query_{module.layer_index}.mmap", dtype='float16', mode='w+', shape=(2000 * 2048, config.hidden_size,))
-        # module.fp_label = np.memmap(f"/mnt/workspace/data/175b_c4/label_{module.layer_index}.mmap", dtype='float16', mode='w+', shape=(2000 * 2048, config.hidden_size * 4,))
-        # module.fp_i = 0
+
+        base_path = "/home/user/DejaVu-Speculative-Decoding/Dejavu"
+        model_size = "125m"
+        model_path = os.path.join(base_path, model_size)
+
+        # Ariel - This is how you create the weird files needed for bash run_infer_opt_125m_collect_sp_data.sh
+        # after running python convert_opt_checkpoint.py
+        module.fp_att_residual = np.memmap(os.path.join(model_path, f"att_residual_{module.layer_index}.mmap"), dtype='float16', mode='w+', shape=(20 * 2048, config.hidden_size,))
+        module.fp_att_in = np.memmap(os.path.join(model_path, f"att_in_{module.layer_index}.mmap"), dtype='float16', mode='w+', shape=(20 * 2048, config.hidden_size,))
+        module.fp_mlp_residual = np.memmap(os.path.join(model_path, f"mlp_residual_{module.layer_index}.mmap"), dtype='float16', mode='w+', shape=(20 * 2048, config.hidden_size,))
+        module.fp_mlp_in = np.memmap(os.path.join(model_path, f"mlp_in_{module.layer_index}.mmap"), dtype='float16', mode='w+', shape=(20 * 2048, config.hidden_size,))
+        module.fp_out = np.memmap(os.path.join(model_path, f"out_{module.layer_index}.mmap"), dtype='float16', mode='w+', shape=(20 * 2048, config.hidden_size,))
+        module.fp_query = np.memmap(os.path.join(model_path + "_c4", f"query_{module.layer_index}.mmap"), dtype='float16', mode='w+', shape=(2000 * 2048, config.hidden_size,))
+        module.fp_label = np.memmap(os.path.join(model_path + "_c4", f"label_{module.layer_index}.mmap"), dtype='float16', mode='w+', shape=(2000 * 2048, config.hidden_size * 4,))
+        module.fp_i = 0
         ######
 
         return module
