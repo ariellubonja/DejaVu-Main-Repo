@@ -375,6 +375,7 @@ class OPTAttention(_OPTAttention):
         return attn_output, attn_weights_reshaped, past_key_value
 
 
+# TODO Ariel find usages of this
 class GPTBlock(OPTDecoderLayer):
     def __init__(self, config, *args, use_checkpoint=True, device="cpu", **kargs):
         # super().__init__(config=config, *args, **kargs)
