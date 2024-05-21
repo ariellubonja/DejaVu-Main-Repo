@@ -7,52 +7,54 @@ Large language models (LLMs) with hundreds of billions of parameters have sparke
 Paper Link: https://proceedings.mlr.press/v202/liu23am.html
 
 
-This repo is consisting of three parts: (1) Training sparsity predictor (2) End-to-End Accuracy Benchmark (3) Generation Latency Benchmark.
+This repo is consisting of three parts: 
+
+1. Training sparsity predictor
+2. End-to-End Accuracy Benchmark
+3. Generation Latency Benchmark
 
 ## Training sparsity predictor
-We collect training data by running model inference using Decentralized_FM_alpha. 
+We collect training data by running model inference using `Decentralized_FM_alpha`. 
 
 **Requirements**
 
 
 ```
-    pip3 install --pre torch==1.12.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html
-    pip3 install cupy-cuda11x==11.0.0
-    python3 -m cupyx.tools.install_library --cuda 11.x --library nccl
-    pip3 install transformers
+pip3 install --pre torch==1.12.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html
+pip3 install cupy-cuda11x==11.0.0
+python3 -m cupyx.tools.install_library --cuda 11.x --library nccl
+pip3 install transformers==4.25.1
 ```
 
 **Collect the training data**
 
-To get started, you need to first collect the training data by runing model inference over c4 
+You need to specify the model checkpoint and data path.
+
+1. To get data, we provide `DejaVu/Decentralized_FM_alpha/c4_train/get_data.py`. By default, we sumsample 500 samples in the script. 
+2. This requires `transformers==4.25.1`: to convert the model checkpoint from huggingface, we provide a script in `DejaVu/Decentralized_FM_alpha/convert_opt_checkpoint.py`.
 
 ```
-DejaVu/Decentralized_FM_alpha/run_infer_opt_175b_collect_sp_data.sh
+cd DejaVu-Speculative-Decoding/Decentralized_FM_alpha
+bash run_infer_opt_175b_collect_sp_data.sh  # Replace with model size of your choosing
 ```
-You need to specify the model checkpoint and data path. To get data, we provide the a script in DejaVu/Decentralized_FM_alpha/c4_train/get_data.py. By default, we sumsample 500 samples in the script. And to convert the model checkpoint from huggingface, we provide a script in DejaVu/Decentralized_FM_alpha/convert_opt_checkpoint.py
 
-Also, you can specify where to store the training data inside DejaVu/Decentralized_FM_alpha/modules/hf_opt_module_save.py 
+Also, you can specify where to store the training data inside `DejaVu/Decentralized_FM_alpha/modules/hf_opt_module_save.py`.
 
 **Training the sparsity classifier**
 
-All code related to training sparsity predictor is located in DejaVu/sparse_predictor.
+All code related to training the sparsity predictor is located in `DejaVu/sparse_predictor`.
 
-We provide two script, one for training attention sparsity predictor DejaVu/sparse_predictor/run_c4_att.sh, one for training MLP sparsity predictor DejaVu/sparse_predictor/trainer_mlp.py. 
+We provide two scripts: 
 
-For detailed instruction, see DejaVu/sparse_predictor/README.md
+- one for training attention sparsity predictor `DejaVu/sparse_predictor/run_c4_att.sh` (may need to run `mkdir logs` inside `sparse_predictor`)
+- one for training the MLP sparsity predictor `DejaVu/sparse_predictor/trainer_mlp.py`. 
+
+For detailed instructions, see `DejaVu/sparse_predictor/README.md`.
 
 
 ## Accuracy Benchmark
-We based our accuracy benchmark based on Decentralized_FM_alpha(https://github.com/DS3Lab/Decentralized_FM_alpha)
+We based our accuracy benchmark based on [Decentralized_FM_alpha](https://github.com/DS3Lab/Decentralized_FM_alpha)
 
-**Requirements**
-
-```
-    pip3 install --pre torch==1.12.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html
-    pip3 install cupy-cuda11x==11.0.0
-    python3 -m cupyx.tools.install_library --cuda 11.x --library nccl
-    pip3 install transformers
-```
 
 **Perplexity on c4**
 
@@ -62,10 +64,11 @@ To run evaluation using dense model, run
 To run evaluation using DejaVu model, run
 ```DejaVu/Decentralized_FM_alpha/run_infer_opt_175b_c4_sparse.sh```
 
-Similar to collecting the data, you will need to specify 
-(1) the model checkpoint path
-(2) the sparsity predictor checkpoint path
-(3) c4 data path
+Similar to collecting the data, you will need to specify:
+
+1. the model checkpoint path
+2. the sparsity predictor checkpoint path
+3. c4 data path
 
 **Accuracy on downstream task**
 
@@ -78,7 +81,7 @@ python generate_task_data.py --output-file wsc.jsonl --task-name wsc --num-fewsh
 ```
 
 2. Run evaluation
-```DejaVu/Decentralized_FM_alpha/run_infer_opt_175b_task_sparse.sh```
+> bash DejaVu/Decentralized_FM_alpha/run_infer_opt_175b_task_sparse.sh
 
 3. Evaluate model output
 ```
@@ -87,41 +90,46 @@ python evaluate_task_result.py --result-file output_wsc.jsonl --task-name wsc --
 ```
 
 ## Generation Latency
-We provide pytorch based implementation that exploits cuda graph. 
+We provide a PyTorch-based implementation that exploits the CUDA graph. 
 
 **Requirements**
 
-For best performance, please use docker. We provide a dockerfile with all requirement at DejaVu/Dejavu/Dockerfile
+For best performance, please use docker. We provide a dockerfile with all requirements at `DejaVu/Dejavu/Dockerfile`
 
 **Dense Model Latency Benchmark**
-To benchmark latency with dense model, run
 
-```torchrun --nproc_per_node=$NUM_GPUs benchmark_generation_opt.py --model-name $MODEL_NAME ```
+To benchmark latency with dense model, run:
 
-Please specify the model checkpoint in DejaVu/Dejavu/benchmarks/benchmark_generation_opt.py with correspondence to $MODEL_NAME
+> torchrun --nproc_per_node=$NUM_GPUs benchmark_generation_opt.py --model-name $MODEL_NAME
+
+Please specify the model checkpoint in `DejaVu/Dejavu/benchmarks/benchmark_generation_opt.py` with correspondence to `$MODEL_NAME`
 
 
 **Sparse Model Latency Benchmark**
 
-Sparse MLP Block
-To benchmark latency with sparse MLP block model, run
+##### Sparse MLP Block
 
-```torchrun --nproc_per_node=$NUM_GPUs benchmark_generation_opt_mlp_sparse.py --model-name $MODEL_NAME --mlp-K $NUM_ACTIVE_NEURONS```
+To benchmark latency with sparse MLP block model, run:
 
-Please specify the model checkpoint in DejaVu/Dejavu/benchmarks/benchmark_generation_opt.py with correspondence to $MODEL_NAME
-$NUM_ACTIVE_NEURONS indicate how many neurons to activate in the first fully connected layer in each MLP block. 
+> torchrun --nproc_per_node=$NUM_GPUs benchmark_generation_opt_mlp_sparse.py --model-name $MODEL_NAME --mlp-K $NUM_ACTIVE_NEURONS
 
+Please specify the model checkpoint in `DejaVu/Dejavu/benchmarks/benchmark_generation_opt.py` with correspondence to `$MODEL_NAME`.
+
+
+`$NUM_ACTIVE_NEURONS` indicate how many neurons to activate in the first fully connected layer in each MLP block.
 For example, for OPT-175B, mlp-k is set to 49152 by default, which will perform dense computation. Set mlp-K 4096 will perform sparse computation. We recommend setting mlp-K to be multiplied by 128.
 
-Sparse MLP + Sparse Attention Block
+##### Sparse MLP + Sparse Attention Block
 
 To benchmark latency with sparse MLP + sparse Attention block model, run
 
-```torchrun --nproc_per_node=$NUM_GPUs benchmark_generation_opt_dejavu.py --model-name $MODEL_NAME --mlp-K $NUM_ACTIVE_NEURONS --att-K1 $NUM_ACTIVE_ATT_1 --att-K2 $NUM_ACTIVE_ATT_2```
+> torchrun --nproc_per_node=$NUM_GPUs benchmark_generation_opt_dejavu.py --model-name $MODEL_NAME --mlp-K $NUM_ACTIVE_NEURONS --att-K1 $NUM_ACTIVE_ATT_1 --att-K2 $NUM_ACTIVE_ATT_2
 
-Please specify the model checkpoint in DejaVu/Dejavu/benchmarks/benchmark_generation_opt.py with correspondence to $MODEL_NAME
-$NUM_ACTIVE_NEURONS indicate how many neurons to activate in the first fully connected layer in each MLP block. 
-$NUM_ACTIVE_ATT_1 and $NUM_ACTIVE_ATT_2 indicate how many attention head to activate. Our ovservation suggests that first 1/3 and last 1/3 layers($NUM_ACTIVE_ATT_1) are less sparse while middle layers($NUM_ACTIVE_ATT_2) are more sparse. We set up two threshold for different sparsity. 
+Please specify the model checkpoint in `DejaVu/Dejavu/benchmarks/benchmark_generation_opt.py` with correspondence to `$MODEL_NAME`.
+
+
+`$NUM_ACTIVE_NEURONS` indicate how many neurons to activate in the first fully connected layer in each MLP block. 
+`$NUM_ACTIVE_ATT_1` and `$NUM_ACTIVE_ATT_2` indicate how many attention head to activate. Our ovservation suggests that first $1/3$ and last $1/3$ layers (`$NUM_ACTIVE_ATT_1`) are less sparse while middle layers(`$NUM_ACTIVE_ATT_2`) are more sparse. We set up two thresholds for different sparsity. 
 
 ## Citation
 
