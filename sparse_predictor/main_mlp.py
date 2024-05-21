@@ -7,6 +7,9 @@ from torch.utils.data import DataLoader
 from trainer_mlp import train
 
 DATA = {
+    "1.3b": {
+        "c4": "../data/1.5b_c4",
+    },
     "175b": {
         "c4": "../data/175b_c4",
     },
@@ -19,9 +22,16 @@ DATA = {
   
 }
 
-MODEL_CHOICES = ['175b', '66b', '30b']
+MODEL_CHOICES = ['175b', '66b', '30b', '1.3b']
 DATA_CHOICES = ['c4']
 CONFIG = {
+    '1.3b': {
+        'num_layer': 24,
+        'ckt_storage': "bylayer",
+        'd': 2048,
+        'h': 32,
+        'N': 400000,
+    },
     '175b':{
         'num_layer': 95,
         'ckt_storage': "bylayer",
@@ -100,7 +110,7 @@ def create_dataset(query, labels, args):
 
 def main():
     parser = argparse.ArgumentParser(description="PyTorch OPT Full Model")
-    parser.add_argument("--model", type=str, default="66b", choices = MODEL_CHOICES)
+    parser.add_argument("--model", type=str, default="1.3b", choices = MODEL_CHOICES)
     parser.add_argument("--dataset", type=str, default="c4", choices = DATA_CHOICES)
     parser.add_argument(
         "--L",
