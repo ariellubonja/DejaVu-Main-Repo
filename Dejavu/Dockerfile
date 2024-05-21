@@ -126,7 +126,8 @@ RUN pip install pytest matplotlib jupyter ipython ipdb gpustat scikit-learn spac
 # hydra
 RUN pip install hydra-core==1.3.1 hydra-colorlog==1.2.0 hydra-optuna-sweeper==1.2.0 pyrootutils rich
 # Core packages
-RUN pip install transformers==4.25.1 datasets==2.8.0 pytorch-lightning==1.9.0 triton==2.1.0.dev20221202 wandb==0.13.9 timm==0.6.12 torchmetrics==0.10.3
+# Transformers 4.20.0 seems the one needed by Decentralized_FM_alpha
+RUN pip install flask netifaces boto3==1.34.88 loguru==0.7.2 transformers==4.20.0 datasets==2.8.0 pytorch-lightning==1.9.0 triton==2.1.0 wandb==0.13.9 timm==0.6.12 torchmetrics==0.10.3
 # torchmetrics 0.11.0 broke hydra's instantiate
 
 # For MLPerf
@@ -149,15 +150,5 @@ RUN git clone https://github.com/HazyResearch/flash-attention \
     && cd csrc/ft_attention && pip install . && cd ../../ \
     && cd .. && rm -rf flash-attention
 
-# Install CUDA extensions for cross-entropy, fused dense, layer norm, fftconv
-COPY csrc csrc
-RUN cd csrc/cauchy && pip install . && cd ../../ \
-    && cd csrc/fftconv && pip install . && cd ../../ \
-    && cd .. && rm -rf csrc
-
-# COPY applications/ applications
-# RUN pip install applications/smyrf/forks/transformers/ \
-#     && pip install applications/smyrf/ \
-#     && rm -rf applications/
-
-# ENV NVIDIA_REQUIRE_CUDA=cuda>=10.1
+# Then use docker run --gpus all --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 --entrypoint "/bin/bash" -it <image-name>
+# to run the container
