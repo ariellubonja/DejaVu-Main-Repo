@@ -14,6 +14,8 @@ if __name__ == '__main__':
     parser.add_argument('--save-path', type=str, default='./pretrained_models1', # Change this
                         help='model-name')
     args = parser.parse_args()
+
+    print("Saving to ", args.save_path)
     
     config = AutoConfig.from_pretrained(args.model_name)
     config.save_pretrained(args.save_path)
@@ -50,7 +52,8 @@ if __name__ == '__main__':
             new_k = k.replace(layer_prefix, '')
             item[new_k] = v
 
-        print('item ', i, ': ', item)
+        # Meghana's added code to print tensors that are created
+        # print('item ', i, ': ', item)
         torch.save(item, os.path.join(args.save_path, f'pytorch_{i}.pt'))
 
         del item
