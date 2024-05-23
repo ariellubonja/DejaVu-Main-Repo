@@ -15,11 +15,13 @@ DATA = {
     },
     "30b": {
         "c4": "../data/30b_c4",
+    },
+    "1.5b": {
+        "c4": "../Decentralized_FM_alpha/1.5b_c4_2",
     }
-  
 }
 
-MODEL_CHOICES = ['175b', '66b', '30b']
+MODEL_CHOICES = ['175b', '66b', '30b', '1.5b']
 DATA_CHOICES = ['c4']
 CONFIG = {
     '175b':{
@@ -36,12 +38,19 @@ CONFIG = {
         'h': 72,
         'N':400000,
     },
-    '30b':{
+    '30b':{   # Are we sure this isn't 1.3b?
         'num_layer': 24,
         'ckt_storage': "bylayer",
         'd':2048,
         'h': 32,
         'N':400000,
+    },
+    '1.5b': {
+        'num_layer': 24,
+        'ckt_storage': "bylayer",
+        'd': 2048,
+        'h': 32,
+        'N': 400000,
     },
 }
 
@@ -101,7 +110,7 @@ def create_dataset(query, labels, args):
 
 def main():
     parser = argparse.ArgumentParser(description="PyTorch OPT Full Model")
-    parser.add_argument("--model", type=str, default="66b", choices = MODEL_CHOICES)
+    parser.add_argument("--model", type=str, default="1.5b", choices = MODEL_CHOICES)
     parser.add_argument("--dataset", type=str, default="c4", choices = DATA_CHOICES)
     parser.add_argument(
         "--L",

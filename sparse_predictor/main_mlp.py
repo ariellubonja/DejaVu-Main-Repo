@@ -8,7 +8,7 @@ from trainer_mlp import train
 
 DATA = {
     "1.5b": {
-        "c4": "../data/1.5b_c4",
+        "c4": "../Decentralized_FM_alpha/1.5b_c4_2",
     },
     "175b": {
         "c4": "../data/175b_c4",
