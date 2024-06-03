@@ -78,7 +78,7 @@ class BasicDataset(Dataset):
 
 def get_data(args, l):
     if CONFIG[args.model]['ckt_storage'] == "bylayer":
-        path = f"{DATA[args.model][args.dataset]}/att_x_{l-1}.mmap"
+        path = f"{DATA[args.model][args.dataset]}/att_x_{l-1}.mmap"  # TODO Ariel Change this to _sp
         print(f"Reading query from {path}")
         query = np.array(np.memmap(path, dtype='float16', mode='r', shape=(400000,CONFIG[args.model]['d']))[: CONFIG[args.model]['N']])
     
