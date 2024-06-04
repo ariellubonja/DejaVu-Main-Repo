@@ -1,5 +1,5 @@
-for l in $(seq 0 8 16)
-do  
+for l in $(seq 0 8 16)  # Change this to nr. layers in the model - nr. gpus you have
+do
     (trap 'kill 0' SIGINT; \
     CUDA_VISIBLE_DEVICES=0 python3 main_att.py --dataset c4 --lr 0.0001 --k 0.3 --L ${l} > logs/c4_att_out_${l}.txt & \
     CUDA_VISIBLE_DEVICES=1 python3 main_att.py --dataset c4 --lr 0.0001 --k 0.3 --L $((l+1)) > logs/c4_att_out_$((l+1)).txt & \

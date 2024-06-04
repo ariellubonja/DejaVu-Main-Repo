@@ -1,9 +1,9 @@
-file=/home/ubuntu/DejaVu/Decentralized_FM_alpha/c4_train/c4_train.jsonl
-output_file=/home/ubuntu/DejaVu/Decentralized_FM_alpha/c4_train/output_c4_train.jsonl
+file=/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/c4_train/c4_train.jsonl
+output_file=/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/c4_train/output_c4_train.jsonl
 
-export PATH_TO_MODEL_CHECKPOINT=/home/ubuntu/DejaVu/Decentralized_FM_alpha/pretrained_models
+export PATH_TO_MODEL_CHECKPOINT=/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/pretrained_models1
 echo "start running ${file}"
-export SPRARSE_PATH=/home/ubuntu/DejaVu/sparse_predictor/pred_models
+export SPRARSE_PATH=/home/ubuntu/DejaVu-Main-Repo/sparse_predictor/pred_models
 export LAYER=86
 export ATTN_TOPK_1=24
 export ATTN_TOPK_2=48
@@ -30,20 +30,20 @@ ARGS="--model-name $PATH_TO_MODEL_CHECKPOINT \
 --output-path ${output_file}"
 
 (trap 'kill 0' SIGINT; \
-python dist_inference_runner.py $(echo ${ARGS}) --cuda-id 0 --rank 0 \
+python3 dist_inference_runner.py $(echo ${ARGS}) --cuda-id 0 --rank 0 \
     &
-python dist_inference_runner.py $(echo ${ARGS}) --cuda-id 1 --rank 1 \
+python3 dist_inference_runner.py $(echo ${ARGS}) --cuda-id 1 --rank 1 \
     &
-python dist_inference_runner.py $(echo ${ARGS}) --cuda-id 2 --rank 2 \
+python3 dist_inference_runner.py $(echo ${ARGS}) --cuda-id 2 --rank 2 \
     &
-python dist_inference_runner.py $(echo ${ARGS}) --cuda-id 3 --rank 3 \
+python3 dist_inference_runner.py $(echo ${ARGS}) --cuda-id 3 --rank 3 \
     &
-python dist_inference_runner.py $(echo ${ARGS}) --cuda-id 4 --rank 4 \
+python3 dist_inference_runner.py $(echo ${ARGS}) --cuda-id 4 --rank 4 \
     &
-python dist_inference_runner.py $(echo ${ARGS}) --cuda-id 5 --rank 5 \
+python3 dist_inference_runner.py $(echo ${ARGS}) --cuda-id 5 --rank 5 \
     &
-python dist_inference_runner.py $(echo ${ARGS}) --cuda-id 6 --rank 6 \
+python3 dist_inference_runner.py $(echo ${ARGS}) --cuda-id 6 --rank 6 \
     &
-python dist_inference_runner.py $(echo ${ARGS}) --cuda-id 7 --rank 7 \
+python3 dist_inference_runner.py $(echo ${ARGS}) --cuda-id 7 --rank 7 \
     & \
 wait)
