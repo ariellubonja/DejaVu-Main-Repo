@@ -5,7 +5,7 @@ export PATH_TO_MODEL_CHECKPOINT=/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_a
 echo "start running ${file}"
 export SPRARSE_PATH=/home/ubuntu/DejaVu-Main-Repo/sparse_predictor/pred_models
 export LAYER=86
-export ATTN_TOPK_1=24
+export ATTN_TOPK_1=24  # TODO Ariel where was this introduced? This is probably what's causing the missing layer errors
 export ATTN_TOPK_2=48
 export SPARSE_ATT=1
 
