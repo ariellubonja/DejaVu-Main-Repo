@@ -499,7 +499,7 @@ class GPTBlock(OPTDecoderLayer):
             wid = str(uuid.uuid4())
             #print(hidden_states.cpu(), flush=True)
             _logit = self.predictor(hidden_states.reshape(-1, self.embed_dim).float())
-            _, _top_indices = _logit.topk(self.topk, dim=1)
+            _, _top_indices = _logit.topk(self.topk, dim=1)  # Use this to tune sparsity of MLP
             _top_k_indices = _top_indices[:, : self.topk]
             #print(_top_k_indices, flush=True)
             print('_top_k_indices.shape: ', _top_k_indices.shape, flush=True)
@@ -576,6 +576,7 @@ class GPTBlock(OPTDecoderLayer):
             print('fc2 shape: ', self.fc2.weight.data.T.shape, flush=True)
             row_zeros = torch.zeros(1, 8192, device='cuda').bool().half()
             final_padded = torch.cat([self._mask, row_zeros], dim=0)
+            # TODO Ariel this is where you save the matrices
             np.save('B_matrix_' + wid + '.npy', (self.fc2.weight.data.T * final_padded).cpu().numpy())
 
         
