@@ -5,8 +5,6 @@ from utils.dist_inference_utils import *
 from comm.comm_utils import *
 from task_datasets.inference_data import get_request_processor
 from pipeline_parallel.dist_pp_utils import *
-from transformers import AutoTokenizer
-import numpy as np
 
 
 def main():
