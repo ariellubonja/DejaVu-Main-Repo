@@ -11,9 +11,9 @@ ARGS="--model-name $PATH_TO_MODEL_CHECKPOINT \
 --seed 42 \
 --fp16 \
 --num-layers 12 \
---max-layers 96 \
+--max-layers 24 \
 --budget 22800 \
---num-iters 1000000 \
+--num-iters 1000 \
 --dist-url tcp://127.0.0.1:9031 \
 --token-micro-batch-size 1 \
 --world-size 8 --pipeline-group-size 8 --data-group-size 1 \
