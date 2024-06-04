@@ -81,11 +81,11 @@ class BasicDataset(Dataset):
 
 def get_data(args, l):
     if CONFIG[args.model]['ckt_storage'] == "bylayer":
-        path = "/home/ubuntu/DejaVu/Decentralized_FM_alpha/1.5b_c4/mlp_sp_x_"+ str(l) + ".mmap"
+        path = "/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/1.5b_c4_2/mlp_sp_x_"+ str(l) + ".mmap"
         print(f"Reading query from {path}")
         query = np.array(np.memmap(path, dtype='float16', mode='r', shape=(300000,CONFIG[args.model]['d']))[: CONFIG[args.model]['N']])
     
-        path = "/home/ubuntu/DejaVu/Decentralized_FM_alpha/1.5b_c4/mlp_label_" + str(l) + ".mmap"
+        path = "/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/1.5b_c4_2/mlp_label_" + str(l) + ".mmap"
         print(f"Reading MLP label from {path}")
         label = np.array(np.memmap(path, dtype='float16', mode='r', shape=(300000,CONFIG[args.model]['d'] * 4))[: CONFIG[args.model]['N']])
     
@@ -169,7 +169,7 @@ def main():
         query_layer,  train_loader, test_loader, args, device, verbal=True
     )
 
-    path = "/home/ubuntu/DejaVu/sparse_predictor/pred_models/mlp_layer" + str(args.L) + ".pt"
+    path = "/home/ubuntu/DejaVu-Main-Repo/sparse_predictor/pred_models/mlp_layer" + str(args.L) + ".pt"
     torch.save(best_model, path)
 
 
