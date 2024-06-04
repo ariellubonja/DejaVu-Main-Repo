@@ -243,6 +243,8 @@ class OPTAttention(_OPTAttention):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
         """Input shape: Batch x Time x Channel"""
 
+        # TODO Ariel is this eq. 2 from the paper?
+
         # get activated head from sparsity predictor
         hmask = None
         if previous_emb != None and self.predictor != None:
@@ -544,6 +546,7 @@ class GPTBlock(OPTDecoderLayer):
             past_key_value=layer_past,
             previous_emb=previous_emb,
         )
+        # TODO Ariel is hidden_states column sparse
         hidden_states = residual + hidden_states
 
         # use mlp sparsity predictor to get selected neurons
