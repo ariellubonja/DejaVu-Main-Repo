@@ -391,7 +391,7 @@ class GPTBlock(OPTDecoderLayer):
         self.dropout = config.dropout
         #self.activation_fn = ACT2FN[config.activation_function]
         self.activation_fn = ACT2FN['gelu']
-        print('activation_fn: ', config.activation_function, flush=True)
+        #print('activation_fn: ', config.activation_function, flush=True)
         self.activation_dropout = config.activation_dropout
 
         self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim, device=device)
@@ -440,7 +440,7 @@ class GPTBlock(OPTDecoderLayer):
                 #    f"{predictor_path}/c4_layer{layer_index}*.pt"
                 #)[0]
                 predictor_path = os.path.join(predictor_path, 'mlp_layer' + str(layer_index) + '.pt')
-                #print(f"loading mlp sparse predictor from {predictor_path}")
+                print(f"loading mlp sparse predictor from {predictor_path}")
                 module.predictor.load_state_dict(torch.load(predictor_path))
             except:
                 print(
@@ -502,14 +502,14 @@ class GPTBlock(OPTDecoderLayer):
             _, _top_indices = _logit.topk(self.topk, dim=1)  # Use this to tune sparsity of MLP
             _top_k_indices = _top_indices[:, : self.topk]
             #print(_top_k_indices, flush=True)
-            print('_top_k_indices.shape: ', _top_k_indices.shape, flush=True)
+            #print('_top_k_indices.shape: ', _top_k_indices.shape, flush=True)
             
-            print('_logit.shape: ', _logit.shape, flush=True)
+            #print('_logit.shape: ', _logit.shape, flush=True)
             self._mask = torch.zeros_like(_logit)
             self._mask[:, _top_k_indices[0, :]] = 1
             self._mask = self._mask.bool().half()
             #self._mask = self._mask.scatter(1, _top_k_indices, 1).bool().half()
-            print('_mask.shape: ', self._mask.shape, flush=True)
+            #print('_mask.shape: ', self._mask.shape, flush=True)
             #np.save('mask' + wid + '.npy', self._mask.cpu().numpy())
     
 
@@ -517,7 +517,7 @@ class GPTBlock(OPTDecoderLayer):
         self, x: torch.Tensor, layer_past=None, mask=None, previous_emb=None
     ) -> torch.Tensor:
         print('in forward', flush=True)
-        print(x.cpu(), flush=True)
+        #print(x.cpu(), flush=True)
         if layer_past is not None:
             past_length = layer_past[0].size(2)
         else:
@@ -572,12 +572,12 @@ class GPTBlock(OPTDecoderLayer):
         
         if self.predictor != None:
             wid = str(uuid.uuid4())
-            np.save('A_matrix_' + wid + '.npy', hidden_states.cpu().numpy())
-            print('fc2 shape: ', self.fc2.weight.data.T.shape, flush=True)
+            #np.save('A_matrix_' + wid + '.npy', hidden_states.cpu().numpy())
+            #print('fc2 shape: ', self.fc2.weight.data.T.shape, flush=True)
             row_zeros = torch.zeros(1, 8192, device='cuda').bool().half()
             final_padded = torch.cat([self._mask, row_zeros], dim=0)
             # TODO Ariel this is where you save the matrices
-            np.save('B_matrix_' + wid + '.npy', (self.fc2.weight.data.T * final_padded).cpu().numpy())
+            #np.save('B_matrix_' + wid + '.npy', (self.fc2.weight.data.T * final_padded).cpu().numpy())
 
         
         hidden_states = torch.nn.functional.linear(
