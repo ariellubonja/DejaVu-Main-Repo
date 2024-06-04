@@ -78,13 +78,13 @@ class BasicDataset(Dataset):
 
 def get_data(args, l):
     if CONFIG[args.model]['ckt_storage'] == "bylayer":
-        path = f"{DATA[args.model][args.dataset]}/att_x_{l-1}.mmap"  # TODO Ariel Change this to _sp
+        path = f"{DATA[args.model][args.dataset]}/att_sp_x_{l-1}.mmap"
         print(f"Reading query from {path}")
-        query = np.array(np.memmap(path, dtype='float16', mode='r', shape=(400000,CONFIG[args.model]['d']))[: CONFIG[args.model]['N']])
+        query = np.array(np.memmap(path, dtype='float16', mode='r', shape=(300000,CONFIG[args.model]['d']))[: CONFIG[args.model]['N']])
     
         path = f"{DATA[args.model][args.dataset]}/score_norm_{l}.mmap"
         print(f"Reading attention label from {path}")
-        label = np.array(np.memmap(path, dtype='float16', mode='r', shape=(400000,CONFIG[args.model]['h']))[: CONFIG[args.model]['N']])
+        label = np.array(np.memmap(path, dtype='float16', mode='r', shape=(300000,CONFIG[args.model]['h']))[: CONFIG[args.model]['N']])
         
         num_valid = (label.sum(-1) > 0).sum()
         print(num_valid)
