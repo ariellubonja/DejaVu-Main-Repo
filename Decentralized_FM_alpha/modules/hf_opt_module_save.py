@@ -487,8 +487,8 @@ class GPTBlock(OPTDecoderLayer):
                 _hidden_states[: end - begin].detach().cpu().numpy()
             )
         else:
-            print("fp_i exceeds fp_att_query.shape[0]")
-            exit()
+            error_message = f"fp_i ({self.fp_i}) exceeds fp_att_query.shape[0] ({self.fp_att_query.shape[0]}). Exiting..."
+            raise ValueError(error_message)
 
         # 125m, 1.7B, ..., 175B applies layer norm BEFORE attention
         if self.do_layer_norm_before:
