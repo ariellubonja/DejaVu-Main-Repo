@@ -11,6 +11,7 @@ from transformers.models.opt.modeling_opt import OPTAttention as _OPTAttention
 from transformers.models.opt.modeling_opt import OPTLearnedPositionalEmbedding
 from transformers.models.opt.configuration_opt import OPTConfig as GPTConfig
 import uuid
+import traceback
 
 def _make_causal_mask(
     input_ids_shape: torch.Size,
@@ -469,6 +470,7 @@ class GPTBlock(OPTDecoderLayer):
                 print(
                     f"Cannot load attnetion sparse predictor {layer_index}. The model is randomly initialized."
                 )
+                traceback.print_exc()
         elif layer_index > 33 and layer_index < 63:
             module.self_attn.predictor = nn.Sequential(
                 nn.Linear(module.embed_dim, 1000, bias=None),
@@ -486,6 +488,7 @@ class GPTBlock(OPTDecoderLayer):
                 print(
                     f"Cannot load attnetion sparse predictor {layer_index}. The model is randomly initialized."
                 )
+                traceback.print_exc()
         else:
             module.self_attn.predictor = None
 

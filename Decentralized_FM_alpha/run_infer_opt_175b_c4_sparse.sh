@@ -4,7 +4,7 @@ output_file=/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/c4_train/output
 export PATH_TO_MODEL_CHECKPOINT=/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/pretrained_models1
 echo "start running ${file}"
 export SPRARSE_PATH=/home/ubuntu/DejaVu-Main-Repo/sparse_predictor/pred_models
-export LAYER=86
+export LAYER=86  # Ariel: This doesn't seem to be used anymore in hf_opt_sparse_mlp_attention.py, it's commented out
 export ATTN_TOPK_1=24  # TODO Ariel where was this introduced? This is probably what's causing the missing layer errors
 export ATTN_TOPK_2=48
 export SPARSE_ATT=1
