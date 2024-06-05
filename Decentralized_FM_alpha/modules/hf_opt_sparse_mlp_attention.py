@@ -413,6 +413,9 @@ class GPTBlock(OPTDecoderLayer):
 
     @classmethod
     def from_pretrained(cls, model_path, config=None, layer_index=None):
+        """
+        Load a pre-trained model from path
+        """
         assert layer_index is not None
         if config is None:
             config = GPTConfig.from_pretrained(model_path)
@@ -499,6 +502,11 @@ class GPTBlock(OPTDecoderLayer):
         return module
 
     def prepare_fc_weights(self, hidden_states: torch.Tensor):
+        """
+        Prepare the weights for the fully connected layer.
+        This uses the sparsity predictor to select a subset of weights.
+        TODO Ariel double-check this
+        """
         with torch.no_grad():
             self.predictor = self.predictor.float()
             wid = str(uuid.uuid4())

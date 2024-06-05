@@ -10,7 +10,7 @@ ARGS="--model-name $PATH_TO_MODEL_CHECKPOINT \
 --model-type opt \
 --seed 42 \
 --fp16 \
---num-layers 12 \
+--num-layers 3 \
 --max-layers 24 \
 --budget 22800 \
 --num-iters 1000 \

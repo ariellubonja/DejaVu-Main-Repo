@@ -21,10 +21,10 @@ ARGS="--model-name $PATH_TO_MODEL_CHECKPOINT \
 --fp16 \
 --num-layers 3 \
 --max-layers 24 \
---budget 10800 \
+--budget 22800 \
 --num-iters 1000 \
---dist-url tcp://127.0.0.1:9969 \
---token-micro-batch-size 2 \
+--dist-url tcp://127.0.0.1:9031 \
+--token-micro-batch-size 1 \
 --world-size 8 --pipeline-group-size 8 --data-group-size 1 \
 --pp-mode pipe_sync_sample_mask_token_pipe \
 --infer-data ${file} \
