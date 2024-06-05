@@ -1,5 +1,5 @@
 file=/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/c4_train/c4_train.jsonl
-output_file=/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/c4_train/output_c4_train.jsonl
+output_file=/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/c4_train/output_c4_train_sparse.jsonl
 
 export PATH_TO_MODEL_CHECKPOINT=/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/pretrained_models1
 echo "start running ${file}"
@@ -47,3 +47,23 @@ python3 dist_inference_runner.py $(echo ${ARGS}) --cuda-id 6 --rank 6 \
 python3 dist_inference_runner.py $(echo ${ARGS}) --cuda-id 7 --rank 7 \
     & \
 wait)
+
+
+python3 -c "import json
+import numpy as np
+
+logprobs = []
+
+with open('$output_file') as f:
+    for line in f:
+        if line.strip() == '':
+            continue
+        if 'result' not in json.loads(line):
+            break
+        item = json.loads(line)
+
+        logprobs += item['result']['choices'][0]['logprobs']['token_logprobs'][1:]
+mean_logprob = sum(logprobs) / len(logprobs)
+perplexity = np.exp(-mean_logprob)
+print('sparse model perplexity:', perplexity)" > $eval_file
+cat $eval_file

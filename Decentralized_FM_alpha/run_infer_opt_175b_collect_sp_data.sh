@@ -3,7 +3,8 @@ file=./c4_train/c4_train.jsonl
     
 echo "start running ${file}"
 
-ARGS="--model-name /home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/pretrained_models1 --model-type opt-save \
+ARGS="--model-name /home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/pretrained_models1 \
+--model-type opt-save \
 --seed 42 \
 --fp16 \
 --num-layers 3 \
