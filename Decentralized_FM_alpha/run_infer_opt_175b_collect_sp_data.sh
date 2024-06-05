@@ -1,17 +1,16 @@
-
 file=./c4_train/c4_train.jsonl
     
 echo "start running ${file}"
 
-ARGS="--model-name /home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/pretrained_models1 \
+ARGS="--model-name ./pretrained_models1 \
 --model-type opt-save \
 --seed 42 \
 --fp16 \
 --num-layers 3 \
 --max-layers 24 \
 --budget 22800 \
---num-iters 2000 \
---dist-url tcp://127.0.0.1:9037 \
+--num-iters 1000 \
+--dist-url tcp://127.0.0.1:9031 \
 --token-micro-batch-size 1 \
 --world-size 8 --pipeline-group-size 8 --data-group-size 1 \
 --pp-mode pipe_sync_sample_mask_token_pipe \
