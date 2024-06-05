@@ -2,7 +2,7 @@ file=./c4_train/c4_train.jsonl
 output_file=./c4_train/output_c4_train.jsonl
 eval_file=./c4_val/eval_c4_val_opt_175b.txt
 
-export PATH_TO_MODEL_CHECKPOINT=/home/ubuntu/DejaVu-Main-Repo/Decentralized_FM_alpha/pretrained_models1
+export PATH_TO_MODEL_CHECKPOINT=./pretrained_models1
     
 echo "start running ${file}"
 
