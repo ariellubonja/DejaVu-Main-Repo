@@ -459,7 +459,7 @@ class GPTBlock(OPTDecoderLayer):
 
     def forward(self, x: torch.Tensor, layer_past=None, mask=None) -> torch.Tensor:
         print('in forward', flush=True)
-        print(x.cpu(), flush=True)
+        # print(x.cpu(), flush=True)
         if layer_past is not None:
             past_length = layer_past[0].size(2)
         else:

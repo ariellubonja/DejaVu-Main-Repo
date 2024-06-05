@@ -14,9 +14,11 @@ def dump_jsonl(data, output_path, append=False):
             f.write(json_record + "\n")
 
 
-dataset = load_dataset("c4", "en", split="validation", streaming=True)
+dataset = load_dataset("c4", "en", split="train", streaming=True)
+# dataset = load_dataset("c4", "en", split="validation", streaming=True) # Meghana change to speed up runtime
 dataset = dataset.shuffle(buffer_size=10000, seed=42)
-path = "c4_valid.jsonl"
+path = "c4_train.jsonl"
+# path = "c4_valid.jsonl"
 
 for idx, doc in enumerate(tqdm(dataset)):
     data = {
