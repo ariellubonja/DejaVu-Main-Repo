@@ -1,15 +1,14 @@
-from typing import List, Optional, Tuple, Union
-
 import os
-import numpy as np
+from typing import Optional, Tuple
+
 import torch
-from torch import nn
 import torch.nn.functional as F
-from transformers.models.opt.modeling_opt import ACT2FN
-from transformers.models.opt.modeling_opt import OPTDecoderLayer
-from transformers.models.opt.modeling_opt import OPTAttention as _OPTAttention
-from transformers.models.opt.modeling_opt import OPTLearnedPositionalEmbedding
+from torch import nn
 from transformers.models.opt.configuration_opt import OPTConfig as GPTConfig
+from transformers.models.opt.modeling_opt import ACT2FN
+from transformers.models.opt.modeling_opt import OPTAttention as _OPTAttention
+from transformers.models.opt.modeling_opt import OPTDecoderLayer
+from transformers.models.opt.modeling_opt import OPTLearnedPositionalEmbedding
 
 
 def _make_causal_mask(
@@ -146,7 +145,6 @@ class GPTEmbeddings(nn.Module):
 
         input_shape = input_ids.size()
         input_ids = input_ids.view(-1, input_shape[-1])
-        batch_size = input_ids.shape[0]
 
         inputs_embeds = self.embed_tokens(input_ids)
 
@@ -422,6 +420,8 @@ class GPTBlock(OPTDecoderLayer):
         return module
 
     def forward(self, x: torch.Tensor, layer_past=None, mask=None) -> torch.Tensor:
+        print('in forward', flush=True)
+        # print(x.cpu(), flush=True)
         if layer_past is not None:
             past_length = layer_past[0].size(2)
         else:
@@ -454,12 +454,7 @@ class GPTBlock(OPTDecoderLayer):
         if self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
 
-        # ###
-        # if self.fp_i < self.fp_att_in.shape[0]:
-        #     _hidden_states = hidden_states.view(-1, hidden_states.size(-1))[mask.bool().view(-1)]
-        #     begin, end = self.fp_i, min(self.fp_i + _hidden_states.size(0), self.fp_att_in.shape[0])
-        #     self.fp_att_in[begin: end] = _hidden_states[:end-begin].detach().cpu().numpy()
-        # ###
+        print("Ariel: in fwd() before calling self_attn", flush=True)
 
         # Self Attention
         hidden_states, _, present = self.self_attn(
@@ -468,6 +463,8 @@ class GPTBlock(OPTDecoderLayer):
             past_key_value=layer_past,
         )
         hidden_states = residual + hidden_states
+
+        print("Ariel: in fwd() after calling self_attn", flush=True)
 
         # 350m applies layer norm AFTER attention
         if not self.do_layer_norm_before:

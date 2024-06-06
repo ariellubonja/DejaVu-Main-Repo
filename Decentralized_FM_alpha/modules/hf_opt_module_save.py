@@ -1,16 +1,15 @@
-from typing import List, Optional, Tuple, Union
-import time
-
 import os
+from typing import Optional, Tuple
+
 import numpy as np
 import torch
-from torch import nn
 import torch.nn.functional as F
-from transformers.models.opt.modeling_opt import ACT2FN
-from transformers.models.opt.modeling_opt import OPTDecoderLayer
-from transformers.models.opt.modeling_opt import OPTAttention as _OPTAttention
-from transformers.models.opt.modeling_opt import OPTLearnedPositionalEmbedding
+from torch import nn
 from transformers.models.opt.configuration_opt import OPTConfig as GPTConfig
+from transformers.models.opt.modeling_opt import ACT2FN
+from transformers.models.opt.modeling_opt import OPTAttention as _OPTAttention
+from transformers.models.opt.modeling_opt import OPTDecoderLayer
+from transformers.models.opt.modeling_opt import OPTLearnedPositionalEmbedding
 
 
 def _make_causal_mask(
@@ -152,7 +151,7 @@ class GPTEmbeddings(nn.Module):
                 past_length += past_layer[0].size(2)
 
         device = input_ids.device
-        # input ids
+
         input_shape = input_ids.size()
         input_ids = input_ids.view(-1, input_shape[-1])
 
@@ -248,6 +247,7 @@ class OPTAttention(_OPTAttention):
             value_states = self._shape(self.v_proj(key_value_states), -1, bsz)
         elif past_key_value is not None:
             # reuse k, v, self_attention
+            # Ariel: this is the key-value cache for self-attention I think
             key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
             value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
             key_states = torch.cat([past_key_value[0], key_states], dim=2)
@@ -273,6 +273,8 @@ class OPTAttention(_OPTAttention):
         value_states = value_states.view(*proj_shape)
 
         src_len = key_states.size(1)
+
+        # Ariel: Before the Softmax and normalization by sqrt(d)
         attn_weights = torch.bmm(query_states, key_states.transpose(1, 2))
 
         if attn_weights.size() != (bsz * self.num_heads, tgt_len, src_len):
@@ -282,6 +284,8 @@ class OPTAttention(_OPTAttention):
             )
 
         if attention_mask is not None:
+            # Ariel: Applies the mask, but I don't understand why it's done in this way
+            # There is an addition step instead of a multiplication
             if attention_mask.size() != (bsz, 1, tgt_len, src_len):
                 raise ValueError(
                     f"Attention mask should be of size {(bsz, 1, tgt_len, src_len)}, but is {attention_mask.size()}"
@@ -297,6 +301,9 @@ class OPTAttention(_OPTAttention):
             dtype_attn_weights = attn_weights.dtype
 
         # upcast to fp32 if the weights are in fp16. Please see https://github.com/huggingface/transformers/pull/17437
+        # Ariel: Applies Softmax to the attention weights
+        # attn_wgh = softmax(qK^T / sqrt(d))
+        # TODO Ariel did the scaling by sqrt(d) already happen? Where?
         if dtype_attn_weights == torch.float16:
             attn_weights = nn.functional.softmax(
                 attn_weights, dim=-1, dtype=torch.float32
@@ -305,6 +312,7 @@ class OPTAttention(_OPTAttention):
             attn_weights = nn.functional.softmax(attn_weights, dim=-1)
 
         if layer_head_mask is not None:
+            # TODO Ariel what does this do?
             if layer_head_mask.size() != (self.num_heads,):
                 raise ValueError(
                     f"Head mask for a single layer should be of size {(self.num_heads,)}, but is"
@@ -316,6 +324,7 @@ class OPTAttention(_OPTAttention):
             attn_weights = attn_weights.view(bsz * self.num_heads, tgt_len, src_len)
 
         if output_attentions:
+            # Ariel: This doesn't seem to be used
             # this operation is a bit awkward, but it's required to
             # make sure that attn_weights keeps its gradient.
             # In order to do so, attn_weights have to be reshaped
@@ -329,10 +338,12 @@ class OPTAttention(_OPTAttention):
         else:
             attn_weights_reshaped = None
 
+        # Ariel: Dropout should be applied only during training. I think it is
         attn_probs = nn.functional.dropout(
             attn_weights, p=self.dropout, training=self.training
         )
 
+        # Ariel: This is the final step of the attention mechanism: attn @ V
         attn_output = torch.bmm(attn_probs, value_states)
 
         if attn_output.size() != (bsz * self.num_heads, tgt_len, self.head_dim):
@@ -365,6 +376,9 @@ class OPTAttention(_OPTAttention):
         attn_output = attn_output.reshape(bsz, tgt_len, self.embed_dim)
 
         attn_output = self.out_proj(attn_output)
+
+        # TODO Ariel: I think for the MMM paper, we don't need anything
+        # from this file. We can just use the forward MLP pass
 
         return attn_output, attn_weights_reshaped, past_key_value
 
@@ -494,6 +508,8 @@ class GPTBlock(OPTDecoderLayer):
         if self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
 
+        print("Ariel: in fwd() before calling self_attn", flush=True)
+
         # Self Attention
         hidden_states, _, present = self.self_attn(
             hidden_states=hidden_states,
@@ -502,6 +518,8 @@ class GPTBlock(OPTDecoderLayer):
             mask=mask,
         )
         hidden_states = residual + hidden_states
+
+        print("Ariel: in fwd() after calling self_attn", flush=True)
 
         # 350m applies layer norm AFTER attention
         if not self.do_layer_norm_before:
