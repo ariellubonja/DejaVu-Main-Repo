@@ -499,12 +499,19 @@ class GPTBlock(OPTDecoderLayer):
         #     self.fp_mlp_in[begin: end] = _hidden_states[:end-begin].detach().cpu().numpy()
         # ###
 
-        print("Hidden states shape BEFORE fully-connected layer 1", hidden_states.shape)
+        # print("Hidden states shape BEFORE fully-connected layer 1", hidden_states.shape)
+
+        torch.save(hidden_states.state_dict(), 'y_LNA.pt')
 
         hidden_states = self.fc1(hidden_states)
+
+        torch.save(hidden_states.state_dict(), 'y_FFL_pre_ReLU.pt')
+
         hidden_states = self.activation_fn(hidden_states)
 
-        print("Hidden states shape AFTER fully-connected layer 1", hidden_states.shape)
+        torch.save(hidden_states.state_dict(), 'y_FFL_1.pt')
+
+        # print("Hidden states shape AFTER fully-connected layer 1", hidden_states.shape)
 
         ##
         # if self.fp_i < self.fp_label.shape[0]:
@@ -516,7 +523,9 @@ class GPTBlock(OPTDecoderLayer):
 
         hidden_states = self.fc2(hidden_states)
 
-        print("Hidden states shape AFTER fully-connected layer 2", hidden_states.shape)
+        torch.save(hidden_states.state_dict(), 'y_FFL_2.pt')
+
+        # print("Hidden states shape AFTER fully-connected layer 2", hidden_states.shape)
 
         hidden_states = residual + hidden_states
         # ###
@@ -528,7 +537,9 @@ class GPTBlock(OPTDecoderLayer):
         # ###
         hidden_states = hidden_states.view(hidden_states_shape)
 
-        print("Hidden states shape AFTER .view(), just before return", hidden_states.shape)
+        torch.save(hidden_states.state_dict(), 'y_skipFF.pt')
+
+        # print("Hidden states shape AFTER .view(), just before return", hidden_states.shape)
 
         return hidden_states, present
 
