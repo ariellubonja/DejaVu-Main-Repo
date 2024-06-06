@@ -454,7 +454,7 @@ class GPTBlock(OPTDecoderLayer):
         if self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
 
-        print("Ariel: in fwd() before calling self_attn", flush=True)
+        print("Ariel: in dense fwd() BEFORE calling self_attn", flush=True)
 
         # Self Attention
         hidden_states, _, present = self.self_attn(
@@ -464,7 +464,7 @@ class GPTBlock(OPTDecoderLayer):
         )
         hidden_states = residual + hidden_states
 
-        print("Ariel: in fwd() after calling self_attn", flush=True)
+        print("Ariel: in dense fwd() AFTER calling self_attn", flush=True)
 
         # 350m applies layer norm AFTER attention
         if not self.do_layer_norm_before:
