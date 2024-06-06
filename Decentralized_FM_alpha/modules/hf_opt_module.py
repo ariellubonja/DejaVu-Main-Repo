@@ -505,7 +505,7 @@ class GPTBlock(OPTDecoderLayer):
             for file in existing_files:
                 if file.startswith(base_name):
                     try:
-                        index = int(file[len(base_name):].split('.')[0])
+                        index = int(file[len(base_name) + 1:].split('.')[0])
                         existing_indices.append(index)
                     except ValueError:
                         continue
