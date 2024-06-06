@@ -143,7 +143,7 @@ class GPTEmbeddings(nn.Module):
                 past_length += past_layer[0].size(2)
 
         device = input_ids.device
-        # input ids
+
         input_shape = input_ids.size()
         input_ids = input_ids.view(-1, input_shape[-1])
         batch_size = input_ids.shape[0]
@@ -242,6 +242,7 @@ class OPTAttention(_OPTAttention):
             value_states = self._shape(self.v_proj(key_value_states), -1, bsz)
         elif past_key_value is not None:
             # reuse k, v, self_attention
+            # Ariel: this is the key-value cache for self-attention I think
             key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
             value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
             key_states = torch.cat([past_key_value[0], key_states], dim=2)
@@ -267,6 +268,8 @@ class OPTAttention(_OPTAttention):
         value_states = value_states.view(*proj_shape)
 
         src_len = key_states.size(1)
+
+        # Ariel: Before the Softmax and normalization by sqrt(d)
         attn_weights = torch.bmm(query_states, key_states.transpose(1, 2))
 
         if attn_weights.size() != (bsz * self.num_heads, tgt_len, src_len):
