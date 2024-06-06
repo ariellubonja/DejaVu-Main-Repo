@@ -279,6 +279,8 @@ class OPTAttention(_OPTAttention):
             )
 
         if attention_mask is not None:
+            # Ariel: Applies the mask, but I don't understand why it's done in this way
+            # There is an addition step instead of a multiplication
             if attention_mask.size() != (bsz, 1, tgt_len, src_len):
                 raise ValueError(
                     f"Attention mask should be of size {(bsz, 1, tgt_len, src_len)}, but is {attention_mask.size()}"
@@ -294,6 +296,9 @@ class OPTAttention(_OPTAttention):
             dtype_attn_weights = attn_weights.dtype
 
         # upcast to fp32 if the weights are in fp16. Please see https://github.com/huggingface/transformers/pull/17437
+        # Ariel: Applies Softmax to the attention weights
+        # attn_wgh = softmax(qK^T / sqrt(d))
+        # TODO Ariel did the scaling by sqrt(d) already happen? Where?
         if dtype_attn_weights == torch.float16:
             attn_weights = nn.functional.softmax(
                 attn_weights, dim=-1, dtype=torch.float32
@@ -302,6 +307,7 @@ class OPTAttention(_OPTAttention):
             attn_weights = nn.functional.softmax(attn_weights, dim=-1)
 
         if layer_head_mask is not None:
+            # TODO Ariel what does this do?
             if layer_head_mask.size() != (self.num_heads,):
                 raise ValueError(
                     f"Head mask for a single layer should be of size {(self.num_heads,)}, but is"
@@ -313,6 +319,7 @@ class OPTAttention(_OPTAttention):
             attn_weights = attn_weights.view(bsz * self.num_heads, tgt_len, src_len)
 
         if output_attentions:
+            # Ariel: This doesn't seem to be used
             # this operation is a bit awkward, but it's required to
             # make sure that attn_weights keeps its gradient.
             # In order to do so, attn_weights have to be reshaped
@@ -326,10 +333,12 @@ class OPTAttention(_OPTAttention):
         else:
             attn_weights_reshaped = None
 
+        # Ariel: Dropout should be applied only during training. I think it is
         attn_probs = nn.functional.dropout(
             attn_weights, p=self.dropout, training=self.training
         )
 
+        # Ariel: This is the final step of the attention mechanism: attn @ V
         attn_output = torch.bmm(attn_probs, value_states)
 
         if attn_output.size() != (bsz * self.num_heads, tgt_len, self.head_dim):
@@ -346,6 +355,9 @@ class OPTAttention(_OPTAttention):
         attn_output = attn_output.reshape(bsz, tgt_len, self.embed_dim)
 
         attn_output = self.out_proj(attn_output)
+
+        # TODO Ariel: I think for the MMM paper, we don't need anything
+        # from this file. We can just use the forward MLP pass
 
         return attn_output, attn_weights_reshaped, past_key_value
 
