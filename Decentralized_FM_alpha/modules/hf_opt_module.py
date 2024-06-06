@@ -492,24 +492,50 @@ class GPTBlock(OPTDecoderLayer):
         if self.do_layer_norm_before:
             hidden_states = self.final_layer_norm(hidden_states)
 
-        # ###
-        # if self.fp_i < self.fp_mlp_in.shape[0]:
-        #     _hidden_states = hidden_states.view(-1, hidden_states.size(-1))[mask.bool().view(-1)]
-        #     begin, end = self.fp_i, min(self.fp_i + _hidden_states.size(0), self.fp_mlp_in.shape[0])
-        #     self.fp_mlp_in[begin: end] = _hidden_states[:end-begin].detach().cpu().numpy()
-        # ###
+        def save_with_index(tensor, base_dir, base_name):
+            # Ensure the base directory exists
+            if not os.path.exists(base_dir):
+                os.makedirs(base_dir)
+            
+            # Get the existing indices
+            existing_files = os.listdir(base_dir)
+            existing_indices = []
+            
+            # Extract indices from filenames
+            for file in existing_files:
+                if file.startswith(base_name):
+                    try:
+                        index = int(file[len(base_name):].split('.')[0])
+                        existing_indices.append(index)
+                    except ValueError:
+                        continue
+            
+            # Determine the next index
+            if existing_indices:
+                next_index = max(existing_indices) + 1
+            else:
+                next_index = 0
+            
+            # Construct the new filename
+            new_filename = f"{base_name}_{next_index}.pt"
+            new_filepath = os.path.join(base_dir, new_filename)
+            
+            # Save the tensor
+            torch.save(tensor, new_filepath)
+            print(f"Saved tensor to {new_filepath}")
 
         # print("Hidden states shape BEFORE fully-connected layer 1", hidden_states.shape)
 
-        torch.save(hidden_states, 'saved_dense_matrices/y_LNA.pt')
+        # torch.save(hidden_states, 'saved_dense_matrices/y_LNA.pt')
+        save_with_index(hidden_states, 'saved_dense_matrices', 'y_LNA')
 
         hidden_states = self.fc1(hidden_states)
 
-        torch.save(hidden_states, 'saved_dense_matrices/y_FFL_pre_ReLU.pt')
+        save_with_index(hidden_states, 'saved_dense_matrices', 'y_FFL_pre_ReLU')
 
         hidden_states = self.activation_fn(hidden_states)
 
-        torch.save(hidden_states, 'saved_dense_matrices/y_FFL_1.pt')
+        save_with_index(hidden_states, 'saved_dense_matrices', 'y_FFL_1')
 
         # print("Hidden states shape AFTER fully-connected layer 1", hidden_states.shape)
 
@@ -523,7 +549,7 @@ class GPTBlock(OPTDecoderLayer):
 
         hidden_states = self.fc2(hidden_states)
 
-        torch.save(hidden_states, 'saved_dense_matrices/y_FFL_2.pt')
+        save_with_index(hidden_states, 'saved_dense_matrices', 'y_FFL_2')
 
         # print("Hidden states shape AFTER fully-connected layer 2", hidden_states.shape)
 
@@ -537,7 +563,7 @@ class GPTBlock(OPTDecoderLayer):
         # ###
         hidden_states = hidden_states.view(hidden_states_shape)
 
-        torch.save(hidden_states, 'saved_dense_matrices/y_skipFF.pt')
+        save_with_index(hidden_states, 'saved_dense_matrices', 'y_skipFF')
 
         # print("Hidden states shape AFTER .view(), just before return", hidden_states.shape)
 
