@@ -378,10 +378,15 @@ class GPTBlock(OPTDecoderLayer):
 
         self.activation_dropout = config.activation_dropout
 
+        print("self.embed_dim.shape: ", self.embed_dim.shape)
+        print("config.ffn_dim.shape: ", config.ffn_dim.shape)
+
         self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim, device=device)
         self.fc1 = nn.Linear(self.embed_dim, config.ffn_dim, device=device)
         self.fc2 = nn.Linear(config.ffn_dim, self.embed_dim, device=device)
         self.final_layer_norm = nn.LayerNorm(self.embed_dim, device=device)
+
+        print("self.final_layer_norm.shape: ", self.final_layer_norm.shape)
 
         self.config = config
         self.use_checkpoint = use_checkpoint
@@ -420,7 +425,12 @@ class GPTBlock(OPTDecoderLayer):
         return module
 
     def forward(self, x: torch.Tensor, layer_past=None, mask=None) -> torch.Tensor:
-        print('in forward', flush=True)
+        """
+        Ariel: This is the forward pass of the GPT block. This includes
+        both attention and MLP calculations
+        """
+
+        # print('in forward', flush=True)
         # print(x.cpu(), flush=True)
         if layer_past is not None:
             past_length = layer_past[0].size(2)
@@ -454,7 +464,7 @@ class GPTBlock(OPTDecoderLayer):
         if self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
 
-        print("Ariel: in dense fwd() BEFORE calling self_attn", flush=True)
+        # print("Ariel: in dense fwd() BEFORE calling self_attn", flush=True)
 
         # Self Attention
         hidden_states, _, present = self.self_attn(
@@ -464,13 +474,15 @@ class GPTBlock(OPTDecoderLayer):
         )
         hidden_states = residual + hidden_states
 
-        print("Ariel: in dense fwd() AFTER calling self_attn", flush=True)
+        # print("Ariel: in dense fwd() AFTER calling self_attn", flush=True)
+
+        # TODO Ariel: Add Top-K operation somewhere here
 
         # 350m applies layer norm AFTER attention
         if not self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
 
-        # Fully Connected
+        # Fully Connected MLP
         hidden_states_shape = hidden_states.shape
         hidden_states = hidden_states.reshape(-1, hidden_states.size(-1))
         residual = hidden_states
