@@ -378,15 +378,10 @@ class GPTBlock(OPTDecoderLayer):
 
         self.activation_dropout = config.activation_dropout
 
-        print("self.embed_dim.shape: ", self.embed_dim.shape)
-        print("config.ffn_dim.shape: ", config.ffn_dim.shape)
-
         self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim, device=device)
         self.fc1 = nn.Linear(self.embed_dim, config.ffn_dim, device=device)
         self.fc2 = nn.Linear(config.ffn_dim, self.embed_dim, device=device)
         self.final_layer_norm = nn.LayerNorm(self.embed_dim, device=device)
-
-        print("self.final_layer_norm.shape: ", self.final_layer_norm.shape)
 
         self.config = config
         self.use_checkpoint = use_checkpoint
@@ -504,8 +499,12 @@ class GPTBlock(OPTDecoderLayer):
         #     self.fp_mlp_in[begin: end] = _hidden_states[:end-begin].detach().cpu().numpy()
         # ###
 
+        print("Hidden states shape BEFORE fully-connected layer 1", hidden_states.shape)
+
         hidden_states = self.fc1(hidden_states)
         hidden_states = self.activation_fn(hidden_states)
+
+        print("Hidden states shape AFTER fully-connected layer 1", hidden_states.shape)
 
         ##
         # if self.fp_i < self.fp_label.shape[0]:
@@ -517,6 +516,8 @@ class GPTBlock(OPTDecoderLayer):
 
         hidden_states = self.fc2(hidden_states)
 
+        print("Hidden states shape AFTER fully-connected layer 2", hidden_states.shape)
+
         hidden_states = residual + hidden_states
         # ###
         # if self.fp_i < self.fp_out.shape[0]:
@@ -526,6 +527,8 @@ class GPTBlock(OPTDecoderLayer):
         #     self.fp_i += _hidden_states.size(0)
         # ###
         hidden_states = hidden_states.view(hidden_states_shape)
+
+        print("Hidden states shape AFTER .view(), just before return", hidden_states.shape)
 
         return hidden_states, present
 
