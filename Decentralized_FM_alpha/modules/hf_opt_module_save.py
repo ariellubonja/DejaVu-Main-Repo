@@ -1,4 +1,5 @@
 from typing import List, Optional, Tuple, Union
+import time
 
 import os
 import numpy as np
@@ -413,47 +414,43 @@ class GPTBlock(OPTDecoderLayer):
         except:
             print("Cannot load from <model_name>. The model is randomly initialized.")
 
-        base_path = "/home/user/models"
-        model_path = os.path.join(base_path, model_path)
-        # model_size = "125m"
-
         module.layer_index = layer_index
         module.self_attn.layer_index = layer_index
         module.fp_i = 0
         module.fp_mlp_query = np.memmap(
-            os.path.join(model_path, f"mlp_sp_x_{module.layer_index}.mmap"),
+            f"1.5b_c4_2/mlp_sp_x_{module.layer_index}.mmap",
             dtype="float16",
             mode="w+",
             shape=(
-                400000,
+                300000,
                 config.hidden_size,
             ),
         )
         module.fp_att_query = np.memmap(
-            os.path.join(model_path, f"att_sp_x_{module.layer_index}.mmap"),
+            f"1.5b_c4_2/att_sp_x_{module.layer_index}.mmap",
             dtype="float16",
             mode="w+",
             shape=(
-                400000,
+                300000,
                 config.hidden_size,
             ),
         )
         module.fp_label = np.memmap(
-            os.path.join(model_path, f"visualization/mlp_label_{module.layer_index}.mmap"),
+            f"1.5b_c4_2/mlp_label_{module.layer_index}.mmap",
             dtype="float16",
             mode="w+",
             shape=(
-                400000,
+                300000,
                 config.hidden_size * 4,
             ),
         )
         module.self_attn.fp_i = 0
         module.self_attn.fp_label = np.memmap(
-            os.path.join(model_path, f"visualization/score_norm_{module.layer_index}.mmap"),
+            f"1.5b_c4_2/score_norm_{module.layer_index}.mmap",
             dtype="float16",
             mode="w+",
             shape=(
-                400000,
+                300000,
                 config.num_attention_heads,
             ),
         )
@@ -461,6 +458,8 @@ class GPTBlock(OPTDecoderLayer):
         return module
 
     def forward(self, x: torch.Tensor, layer_past=None, mask=None) -> torch.Tensor:
+        print('in forward', flush=True)
+        # print(x.cpu(), flush=True)
         if layer_past is not None:
             past_length = layer_past[0].size(2)
         else:
@@ -488,8 +487,8 @@ class GPTBlock(OPTDecoderLayer):
                 _hidden_states[: end - begin].detach().cpu().numpy()
             )
         else:
-            print("fp_i exceeds fp_att_query.shape[0]")
-            exit()
+            error_message = f"fp_i ({self.fp_i}) exceeds fp_att_query.shape[0] ({self.fp_att_query.shape[0]}). Exiting..."
+            raise ValueError(error_message)
 
         # 125m, 1.7B, ..., 175B applies layer norm BEFORE attention
         if self.do_layer_norm_before:

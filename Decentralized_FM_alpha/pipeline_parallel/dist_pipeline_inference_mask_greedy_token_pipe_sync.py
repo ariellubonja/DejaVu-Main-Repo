@@ -330,6 +330,10 @@ class DistGreedyInferenceMaskTokenPipeSync(DistGreedyInferenceTokePipeSync):
                 .to(self.device)
             )
         for layer_index in range(self.num_layers):
+            # TODO Ariel here you should be doing the Early-exiting
+            # TODO You need to think about offloading here
+            # TODO Ariel spawn a process after early exiting
+            # TODO CudaIPCMemHandle
             # global layer indexing could be an argument
             global_layer_index = self.num_layers * self.pp_rank + layer_index
             if self.max_layers is not None and global_layer_index >= self.max_layers:
@@ -448,6 +452,9 @@ class DistGreedyInferenceMaskTokenPipeSync(DistGreedyInferenceTokePipeSync):
 
                 previous_emb = input_emb
         elif SPARSE:
+            print('SPARSE PASSING!!!!!!!!!!!!!')
+            import time
+            time.sleep(5000)
             # TODO: previous MLP block input as input to MLP sparse predictor
             pass
         else:
@@ -479,7 +486,7 @@ class DistGreedyInferenceMaskTokenPipeSync(DistGreedyInferenceTokePipeSync):
 
         z = F.log_softmax(z, -1)
         original_indices = indices
-        indices = indices[:, 1:]  # skip first
+        indices = indices[:, 1:]  # skip first. TODO Ariel Why?
 
         logprobs = torch.gather(z, -1, indices.unsqueeze(-1)).squeeze(-1)
         self.ret_tokens[

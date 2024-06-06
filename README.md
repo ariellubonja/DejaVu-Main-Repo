@@ -47,7 +47,7 @@ All code related to training the sparsity predictor is located in `DejaVu/sparse
 We provide two scripts: 
 
 - one for training attention sparsity predictor `DejaVu/sparse_predictor/run_c4_att.sh` (may need to run `mkdir logs` inside `sparse_predictor`)
-- one for training the MLP sparsity predictor `DejaVu/sparse_predictor/trainer_mlp.py`. 
+- one for training the MLP sparsity predictor `DejaVu/sparse_predictor/run_c4_mlp.sh`. 
 
 For detailed instructions, see `DejaVu/sparse_predictor/README.md`.
 

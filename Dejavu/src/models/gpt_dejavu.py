@@ -100,6 +100,8 @@ def remap_state_dict_gpt2(state_dict, config):
         Wout = state_dict.pop(f"h.{d}.attn.c_proj.weight")
         state_dict[f"transformer.layers.{d}.mixer.out_proj.weight"] = Wout.t()
 
+        # TODO Ariel edit this to add early-editing like in PPD
+
     def key_mapping_attn(key):
         key = re.sub(
             r"^h.(\d+).attn.c_attn.bias", r"transformer.layers.\1.mixer.Wqkv.bias", key

@@ -10,7 +10,8 @@ from transformers.models.opt.modeling_opt import OPTDecoderLayer
 from transformers.models.opt.modeling_opt import OPTAttention as _OPTAttention
 from transformers.models.opt.modeling_opt import OPTLearnedPositionalEmbedding
 from transformers.models.opt.configuration_opt import OPTConfig as GPTConfig
-
+import uuid
+import traceback
 
 def _make_causal_mask(
     input_ids_shape: torch.Size,
@@ -243,6 +244,8 @@ class OPTAttention(_OPTAttention):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
         """Input shape: Batch x Time x Channel"""
 
+        # TODO Ariel is this eq. 2 from the paper?
+
         # get activated head from sparsity predictor
         hmask = None
         if previous_emb != None and self.predictor != None:
@@ -389,8 +392,9 @@ class GPTBlock(OPTDecoderLayer):
         )
         self.do_layer_norm_before = config.do_layer_norm_before
         self.dropout = config.dropout
-        self.activation_fn = ACT2FN[config.activation_function]
-
+        #self.activation_fn = ACT2FN[config.activation_function]
+        self.activation_fn = ACT2FN['gelu']
+        #print('activation_fn: ', config.activation_function, flush=True)
         self.activation_dropout = config.activation_dropout
 
         self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim, device=device)
@@ -409,6 +413,9 @@ class GPTBlock(OPTDecoderLayer):
 
     @classmethod
     def from_pretrained(cls, model_path, config=None, layer_index=None):
+        """
+        Load a pre-trained model from path
+        """
         assert layer_index is not None
         if config is None:
             config = GPTConfig.from_pretrained(model_path)
@@ -426,17 +433,19 @@ class GPTBlock(OPTDecoderLayer):
         except:
             print("Cannot load from <model_name>. The model is randomly initialized.")
         # initialize and loading mlp predictor
-        if layer_index < int(os.environ["LAYER"]):
+        #if layer_index < int(os.environ["LAYER"]):
+        if layer_index < 24:
             module.predictor = nn.Sequential(
-                nn.Linear(module.embed_dim, 1000, bias=None),
-                nn.Linear(1000, config.ffn_dim, bias=None),
+                nn.Linear(2048, 1000, bias=None),
+                nn.Linear(1000, 8192, bias=None),
             )
             predictor_path = os.environ["SPRARSE_PATH"]
             module.topk = int(os.environ["TOPK"])
             try:
-                predictor_path = glob.glob(
-                    f"{predictor_path}/c4_layer{layer_index}*.pt"
-                )[0]
+                #predictor_path = glob.glob(
+                #    f"{predictor_path}/c4_layer{layer_index}*.pt"
+                #)[0]
+                predictor_path = os.path.join(predictor_path, 'mlp_layer' + str(layer_index) + '.pt')
                 print(f"loading mlp sparse predictor from {predictor_path}")
                 module.predictor.load_state_dict(torch.load(predictor_path))
             except:
@@ -464,6 +473,7 @@ class GPTBlock(OPTDecoderLayer):
                 print(
                     f"Cannot load attnetion sparse predictor {layer_index}. The model is randomly initialized."
                 )
+                traceback.print_exc()
         elif layer_index > 33 and layer_index < 63:
             module.self_attn.predictor = nn.Sequential(
                 nn.Linear(module.embed_dim, 1000, bias=None),
@@ -481,6 +491,7 @@ class GPTBlock(OPTDecoderLayer):
                 print(
                     f"Cannot load attnetion sparse predictor {layer_index}. The model is randomly initialized."
                 )
+                traceback.print_exc()
         else:
             module.self_attn.predictor = None
 
@@ -491,18 +502,35 @@ class GPTBlock(OPTDecoderLayer):
         return module
 
     def prepare_fc_weights(self, hidden_states: torch.Tensor):
+        """
+        Prepare the weights for the fully connected layer.
+        This uses the sparsity predictor to select a subset of weights.
+        TODO Ariel double-check this
+        """
         with torch.no_grad():
             self.predictor = self.predictor.float()
-
+            wid = str(uuid.uuid4())
+            #print(hidden_states.cpu(), flush=True)
             _logit = self.predictor(hidden_states.reshape(-1, self.embed_dim).float())
-            _, _top_indices = _logit.topk(self.topk, dim=1)
+            _, _top_indices = _logit.topk(self.topk, dim=1)  # Use this to tune sparsity of MLP
             _top_k_indices = _top_indices[:, : self.topk]
+            #print(_top_k_indices, flush=True)
+            #print('_top_k_indices.shape: ', _top_k_indices.shape, flush=True)
+            
+            #print('_logit.shape: ', _logit.shape, flush=True)
             self._mask = torch.zeros_like(_logit)
-            self._mask = self._mask.scatter(1, _top_k_indices, 1).bool().half()
+            self._mask[:, _top_k_indices[0, :]] = 1
+            self._mask = self._mask.bool().half()
+            #self._mask = self._mask.scatter(1, _top_k_indices, 1).bool().half()
+            #print('_mask.shape: ', self._mask.shape, flush=True)
+            #np.save('mask' + wid + '.npy', self._mask.cpu().numpy())
+    
 
     def forward(
         self, x: torch.Tensor, layer_past=None, mask=None, previous_emb=None
     ) -> torch.Tensor:
+        print('in forward', flush=True)
+        #print(x.cpu(), flush=True)
         if layer_past is not None:
             past_length = layer_past[0].size(2)
         else:
@@ -529,6 +557,7 @@ class GPTBlock(OPTDecoderLayer):
             past_key_value=layer_past,
             previous_emb=previous_emb,
         )
+        # TODO Ariel is hidden_states column sparse
         hidden_states = residual + hidden_states
 
         # use mlp sparsity predictor to get selected neurons
@@ -552,7 +581,19 @@ class GPTBlock(OPTDecoderLayer):
         hidden_states = self.fc1(hidden_states)
         if self.predictor != None:
             hidden_states = hidden_states * self._mask
+        
         hidden_states = self.activation_fn(hidden_states)
+        
+        if self.predictor != None:
+            wid = str(uuid.uuid4())
+            #np.save('A_matrix_' + wid + '.npy', hidden_states.cpu().numpy())
+            #print('fc2 shape: ', self.fc2.weight.data.T.shape, flush=True)
+            row_zeros = torch.zeros(1, 8192, device='cuda').bool().half()
+            final_padded = torch.cat([self._mask, row_zeros], dim=0)
+            # TODO Ariel this is where you save the matrices
+            #np.save('B_matrix_' + wid + '.npy', (self.fc2.weight.data.T * final_padded).cpu().numpy())
+
+        
         hidden_states = torch.nn.functional.linear(
             hidden_states, self.fc2.weight.data.T, bias=self.fc2.bias.data
         )
