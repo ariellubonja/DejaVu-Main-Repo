@@ -569,15 +569,20 @@ class GPTBlock(OPTDecoderLayer):
         # print("Hidden states shape BEFORE fully-connected layer 1", hidden_states.shape)
 
         print("y_LNA dense sparsity: ", get_tensor_sparsity_level(hidden_states))
+
         # save_with_index(hidden_states, 'saved_dense_matrices', 'y_LNA')
 
         hidden_states = self.fc1(hidden_states)
 
+        print("fc1 weights sparsity: ", get_tensor_sparsity_level(self.fc1.weight))
+
         print("y_FFL_pre_ReLU dense sparsity: ", get_tensor_sparsity_level(hidden_states))
         # save_with_index(hidden_states, 'saved_dense_matrices', 'y_FFL_pre_ReLU')
 
+        # TODO Ariel Do i top-k here? Doesn't seem necessary due to ReLU
         hidden_states = self.activation_fn(hidden_states)
 
+        # Ariel: This should already be ~93% sparse without Top-K
         print("y_FFL_1 dense sparsity: ", get_tensor_sparsity_level(hidden_states))
         # save_with_index(hidden_states, 'saved_dense_matrices', 'y_FFL_1')
 
