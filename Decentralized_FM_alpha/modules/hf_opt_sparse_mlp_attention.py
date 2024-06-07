@@ -294,6 +294,8 @@ class OPTAttention(_OPTAttention):
         value_states = value_states.view(*proj_shape)
 
         src_len = key_states.size(1)
+
+        # Ariel: Before the Softmax and normalization by sqrt(d)
         attn_weights = torch.bmm(query_states, key_states.transpose(1, 2))
 
         if attn_weights.size() != (bsz * self.num_heads, tgt_len, src_len):
@@ -303,6 +305,8 @@ class OPTAttention(_OPTAttention):
             )
 
         if attention_mask is not None:
+            # Ariel: Applies the mask, but I don't understand why it's done in this way
+            # There is an addition step instead of a multiplication
             if attention_mask.size() != (bsz, 1, tgt_len, src_len):
                 raise ValueError(
                     f"Attention mask should be of size {(bsz, 1, tgt_len, src_len)}, but is {attention_mask.size()}"
@@ -318,6 +322,9 @@ class OPTAttention(_OPTAttention):
             dtype_attn_weights = attn_weights.dtype
 
         # upcast to fp32 if the weights are in fp16. Please see https://github.com/huggingface/transformers/pull/17437
+        # Ariel: Applies Softmax to the attention weights
+        # attn_wgh = softmax(qK^T / sqrt(d))
+        # TODO Ariel did the scaling by sqrt(d) already happen? Where?
         if dtype_attn_weights == torch.float16:
             attn_weights = nn.functional.softmax(
                 attn_weights, dim=-1, dtype=torch.float32
@@ -326,6 +333,7 @@ class OPTAttention(_OPTAttention):
             attn_weights = nn.functional.softmax(attn_weights, dim=-1)
 
         if layer_head_mask is not None:
+            # TODO Ariel what does this do?
             if layer_head_mask.size() != (self.num_heads,):
                 raise ValueError(
                     f"Head mask for a single layer should be of size {(self.num_heads,)}, but is"
@@ -339,6 +347,7 @@ class OPTAttention(_OPTAttention):
         attn_weights = attn_weights.view(bsz * self.num_heads, tgt_len, src_len)
 
         if output_attentions:
+            # Ariel: This doesn't seem to be used
             # this operation is a bit awkward, but it's required to
             # make sure that attn_weights keeps its gradient.
             # In order to do so, attn_weights have to be reshaped
@@ -352,9 +361,12 @@ class OPTAttention(_OPTAttention):
         else:
             attn_weights_reshaped = None
 
+        # Ariel: Dropout should be applied only during training. I think it is
         attn_probs = nn.functional.dropout(
             attn_weights, p=self.dropout, training=self.training
         )
+
+        # Ariel: This is the final step of the attention mechanism: attn @ V
         attn_output = torch.bmm(attn_probs, value_states)
 
         if attn_output.size() != (bsz * self.num_heads, tgt_len, self.head_dim):
@@ -375,6 +387,9 @@ class OPTAttention(_OPTAttention):
         attn_output = attn_output.reshape(bsz, tgt_len, self.embed_dim)
         attn_output = self.out_proj(attn_output)
 
+        # TODO Ariel: I think for the MMM paper, we don't need anything
+        # from this file. We can just use the forward MLP pass
+
         return attn_output, attn_weights_reshaped, past_key_value
 
 
@@ -392,8 +407,8 @@ class GPTBlock(OPTDecoderLayer):
         )
         self.do_layer_norm_before = config.do_layer_norm_before
         self.dropout = config.dropout
-        #self.activation_fn = ACT2FN[config.activation_function]
-        self.activation_fn = ACT2FN['gelu']
+        self.activation_fn = ACT2FN[config.activation_function]
+        # self.activation_fn = ACT2FN['gelu']  # Ariel: Did Meghana change this?
         #print('activation_fn: ', config.activation_function, flush=True)
         self.activation_dropout = config.activation_dropout
 
@@ -550,6 +565,8 @@ class GPTBlock(OPTDecoderLayer):
         if self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
 
+        # print("Ariel: in Dejavu_sparse fwd() BEFORE calling self_attn", flush=True)
+
         # Self Attention
         hidden_states, _, present = self.self_attn(
             hidden_states=hidden_states,
@@ -560,6 +577,10 @@ class GPTBlock(OPTDecoderLayer):
         # TODO Ariel is hidden_states column sparse
         hidden_states = residual + hidden_states
 
+        # print("Ariel: in Dejavu_sparse fwd() AFTER calling self_attn", flush=True)
+
+        # TODO Ariel: Add Top-K operation somewhere here
+
         # use mlp sparsity predictor to get selected neurons
         self._mask = None
         if self.predictor != None:
@@ -569,7 +590,7 @@ class GPTBlock(OPTDecoderLayer):
         if not self.do_layer_norm_before:
             hidden_states = self.self_attn_layer_norm(hidden_states)
 
-        # Fully Connected
+        # Fully Connected MLP
         hidden_states_shape = hidden_states.shape
         hidden_states = hidden_states.reshape(-1, hidden_states.size(-1))
         residual = hidden_states
@@ -578,11 +599,52 @@ class GPTBlock(OPTDecoderLayer):
         if self.do_layer_norm_before:
             hidden_states = self.final_layer_norm(hidden_states)
 
+        def save_with_index(tensor, base_dir, base_name):
+            # Ensure the base directory exists
+            if not os.path.exists(base_dir):
+                os.makedirs(base_dir)
+
+            # Get the existing indices
+            existing_files = os.listdir(base_dir)
+            existing_indices = []
+
+            # Extract indices from filenames
+            for file in existing_files:
+                if file.startswith(base_name):
+                    try:
+                        index = int(file[len(base_name) + 1:].split('.')[0])
+                        existing_indices.append(index)
+                    except ValueError:
+                        continue
+
+            # Determine the next index
+            if existing_indices:
+                next_index = max(existing_indices) + 1
+            else:
+                next_index = 0
+
+            # Construct the new filename
+            new_filename = f"{base_name}_{next_index}.pt"
+            new_filepath = os.path.join(base_dir, new_filename)
+
+            # Save the tensor
+            torch.save(tensor, new_filepath)
+            print(f"Saved tensor to {new_filepath}")
+
+        # print("Hidden states shape BEFORE fully-connected layer 1", hidden_states.shape)
+
+        # torch.save(hidden_states, 'saved_dense_matrices/y_LNA.pt')
+        save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_LNA')
+
         hidden_states = self.fc1(hidden_states)
         if self.predictor != None:
             hidden_states = hidden_states * self._mask
+
+        save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_FFL_pre_ReLU')
         
         hidden_states = self.activation_fn(hidden_states)
+
+        save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_FFL_1')
         
         if self.predictor != None:
             wid = str(uuid.uuid4())
@@ -593,12 +655,17 @@ class GPTBlock(OPTDecoderLayer):
             # TODO Ariel this is where you save the matrices
             #np.save('B_matrix_' + wid + '.npy', (self.fc2.weight.data.T * final_padded).cpu().numpy())
 
-        
+            save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_FFL_2')
+
+        # print("Hidden states shape AFTER fully-connected layer 2", hidden_states.shape)
+
         hidden_states = torch.nn.functional.linear(
             hidden_states, self.fc2.weight.data.T, bias=self.fc2.bias.data
         )
 
         hidden_states = (residual + hidden_states).view(hidden_states_shape)
+
+        save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_skipFF')
 
         return hidden_states, present
 

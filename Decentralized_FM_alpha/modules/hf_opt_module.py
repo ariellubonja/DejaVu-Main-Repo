@@ -375,7 +375,8 @@ class GPTBlock(OPTDecoderLayer):
         self.do_layer_norm_before = config.do_layer_norm_before
         self.dropout = config.dropout
         self.activation_fn = ACT2FN[config.activation_function]
-
+        # self.activation_fn = ACT2FN['gelu']  # Ariel: Did Meghana change this?
+        #print('activation_fn: ', config.activation_function, flush=True)
         self.activation_dropout = config.activation_dropout
 
         self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim, device=device)
@@ -388,6 +389,9 @@ class GPTBlock(OPTDecoderLayer):
 
     @classmethod
     def from_pretrained(cls, model_path, config=None, layer_index=None):
+        """
+        Load a pre-trained model from path
+        """
         assert layer_index is not None
         if config is None:
             config = GPTConfig.from_pretrained(model_path)
@@ -421,8 +425,9 @@ class GPTBlock(OPTDecoderLayer):
 
     def forward(self, x: torch.Tensor, layer_past=None, mask=None) -> torch.Tensor:
         """
-        Ariel: This is the forward pass of the GPT block. This includes
-        both attention and MLP calculations
+        Prepare the weights for the fully connected layer.
+        This uses the sparsity predictor to select a subset of weights.
+        TODO Ariel double-check this
         """
 
         # print('in forward', flush=True)
@@ -481,12 +486,6 @@ class GPTBlock(OPTDecoderLayer):
         hidden_states_shape = hidden_states.shape
         hidden_states = hidden_states.reshape(-1, hidden_states.size(-1))
         residual = hidden_states
-        # ###
-        # if self.fp_i < self.fp_mlp_residual.shape[0]:
-        #     _hidden_states = hidden_states.view(-1, hidden_states.size(-1))[mask.bool().view(-1)]
-        #     begin, end = self.fp_i, min(self.fp_i + _hidden_states.size(0), self.fp_mlp_residual.shape[0])
-        #     self.fp_mlp_residual[begin: end] = _hidden_states[:end-begin].detach().cpu().numpy()
-        # ###
 
         # 125m, 1.7B, ..., 175B applies layer norm BEFORE attention
         if self.do_layer_norm_before:
