@@ -124,7 +124,7 @@ def main():
         "--D",
         type=int,
         default=1000,
-        help="low rank dimension",
+        help="low rank dimension",  # TODO Ariel is this just a low-rank? I thought we selected sparse params
     )
     parser.add_argument(
         "--batch_size",
@@ -157,6 +157,7 @@ def main():
 
     query, labels = get_data(args, args.L)
 
+    print("Creating dataset", flush=True)
     train_loader, test_loader = create_dataset(query, labels, args)
 
     query_layer = torch.nn.Sequential(
@@ -164,19 +165,14 @@ def main():
         torch.nn.Linear(args.D, CONFIG[args.model]['d']*4, bias=None),
     )
     
-    print("Start Training")
+    print("Starting Training", flush=True)
     best_model, eval_result = train(
         query_layer,  train_loader, test_loader, args, device, verbal=True
     )
 
-    path = "/home/ubuntu/DejaVu-Main-Repo/sparse_predictor/pred_models/mlp_layer" + str(args.L) + ".pt"
+    path = "./pred_models/mlp_layer" + str(args.L) + ".pt"
+    print(f"Saving model to {path}", flush=True)
     torch.save(best_model, path)
-
-
-
-
-
-
 
 
 

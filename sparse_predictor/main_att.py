@@ -146,7 +146,7 @@ def main():
         "--k",
         type=float,
         default=0.7,
-        help="top k percent to mark as activate head",
+        help="top k percent to mark as activate head",  # TODO Ariel this is where you select attention sparsity
     )
     args = parser.parse_args()
 

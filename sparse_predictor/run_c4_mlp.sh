@@ -1,4 +1,4 @@
-for l in $(seq 0 8 16)
+for l in $(seq 0 8 16)  # Ariel: This needs to match no. layers in your model - no. GPUs
 do  
     (trap 'kill 0' SIGINT; \
     CUDA_VISIBLE_DEVICES=0 python3 main_mlp.py --dataset c4 --lr 0.001 --L ${l} > logs/c4_mlp_out_${l}.txt & \
