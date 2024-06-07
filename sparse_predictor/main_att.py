@@ -181,7 +181,7 @@ def main():
 
     # Ariel: this didn't match the hf_opt_sparse_mlp_attention.py. WTF guys..
     # full_path = os.path.join(folder_path, f"{args.dataset}_att_k_{args.k}_layer{args.L}_-{eval_result['Recall']:.4f}-{eval_result['Classifier Sparsity']:.0f}.pt")
-    full_path = os.path.join(folder_path, f"{args.dataset}_layer{args.L}.pt")
+    full_path = os.path.join(folder_path, f"{args.dataset}_attn_layer{args.L}.pt")
     torch.save(best_model, full_path)
 
 

@@ -481,11 +481,11 @@ class GPTBlock(OPTDecoderLayer):
             module.self_attn.topk = float(os.environ["ATTN_TOPK_1"])
             try:
                 print("glob: ", glob.glob(
-                    f"{predictor_path}/c4_att_layer{layer_index}*.pt"
+                    f"{predictor_path}/c4_attn_layer{layer_index}*.pt"
                 ))
                 # Ariel: this path is incorrect, wtf guys?? it's supposed to be c4_attn_k
                 predictor_path = glob.glob(
-                    f"{predictor_path}/c4_att_layer{layer_index}*.pt"
+                    f"{predictor_path}/c4_attn_layer{layer_index}*.pt"
                 )[0]
                 print(f"loading attnetion sparse predictor from {predictor_path}")
                 module.self_attn.predictor.load_state_dict(torch.load(predictor_path))
