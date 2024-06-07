@@ -160,6 +160,8 @@ def main():
     print("=" * 40, "Layer", args.L, "=" * 40)
 
     query, labels = get_data(args, args.L)
+
+    print("Creating dataset")
     train_loader, test_loader = create_dataset(query, labels, args)
 
     query_layer = torch.nn.Sequential(
