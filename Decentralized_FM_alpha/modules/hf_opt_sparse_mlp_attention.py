@@ -544,6 +544,49 @@ class GPTBlock(OPTDecoderLayer):
     def forward(
         self, x: torch.Tensor, layer_past=None, mask=None, previous_emb=None
     ) -> torch.Tensor:
+        def fine_grained_prune(tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
+            """
+            magnitude-based pruning for single tensor
+            :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
+            :param sparsity: float, pruning sparsity
+                sparsity = #zeros / #elements = 1 - #nonzeros / #elements
+            :return:
+                torch.(cuda.)Tensor, mask for zeros
+            """
+            sparsity = min(max(0.0, sparsity), 1.0)
+            if sparsity == 1.0:
+                tensor.zero_()
+                return torch.zeros_like(tensor)
+            elif sparsity == 0.0:
+                return torch.ones_like(tensor)
+
+            num_elements = tensor.numel()
+
+            # calculate the #zeros
+            num_zeros = round(sparsity * num_elements)
+            # calculate the importance of weight
+            importance = tensor.abs()
+
+            # calculate the pruning threshold
+            # print("importance.shape: ", importance.shape)
+            # print("num_zeros: ", num_zeros)
+            threshold, index = torch.kthvalue(importance.flatten(),
+                                              num_zeros)  # Used ChatGPT here to flatten (fix RuntimeError)
+            # print("threshold: ", threshold)
+
+            # get binary mask (1 for nonzeros, 0 for zeros)
+            # print(importance < threshold)
+            mask = importance > threshold
+            # mask = torch.zeros_like(importance, dtype=torch.bool)  # Used ChatGPT here, didn't work - incorrect logic!
+
+            # apply mask to prune the tensor in-place
+            tensor.mul_(mask)
+
+            return mask
+
+        def get_tensor_sparsity_level(tensor):
+            return 1 - (tensor != 0).sum().item() / tensor.numel()
+
         print('in forward', flush=True)
         #print(x.cpu(), flush=True)
         if layer_past is not None:
@@ -633,18 +676,20 @@ class GPTBlock(OPTDecoderLayer):
 
         # print("Hidden states shape BEFORE fully-connected layer 1", hidden_states.shape)
 
-        # torch.save(hidden_states, 'saved_dense_matrices/y_LNA.pt')
-        save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_LNA')
+        print("y_LNA DejaVu sparsity: ", get_tensor_sparsity_level(hidden_states))
+        # save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_LNA')
 
         hidden_states = self.fc1(hidden_states)
         if self.predictor != None:
             hidden_states = hidden_states * self._mask
 
-        save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_FFL_pre_ReLU')
+        print("y_FFL_pre_ReLU DejaVu sparsity: ", get_tensor_sparsity_level(hidden_states))
+        # save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_FFL_pre_ReLU')
         
         hidden_states = self.activation_fn(hidden_states)
 
-        save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_FFL_1')
+        print("y_FFL_1 DejaVu sparsity: ", get_tensor_sparsity_level(hidden_states))
+        # save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_FFL_1')
         
         if self.predictor != None:
             wid = str(uuid.uuid4())
@@ -655,7 +700,8 @@ class GPTBlock(OPTDecoderLayer):
             # TODO Ariel this is where you save the matrices
             #np.save('B_matrix_' + wid + '.npy', (self.fc2.weight.data.T * final_padded).cpu().numpy())
 
-            save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_FFL_2')
+        print("y_FFL_2 DejaVu sparsity: ", get_tensor_sparsity_level(hidden_states))
+        # save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_FFL_2')
 
         # print("Hidden states shape AFTER fully-connected layer 2", hidden_states.shape)
 
@@ -665,7 +711,8 @@ class GPTBlock(OPTDecoderLayer):
 
         hidden_states = (residual + hidden_states).view(hidden_states_shape)
 
-        save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_skipFF')
+        print("y_skipFF DejaVu sparsity: ", get_tensor_sparsity_level(hidden_states))
+        # save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_skipFF')
 
         return hidden_states, present
 
