@@ -527,23 +527,16 @@ class GPTBlock(OPTDecoderLayer):
         This uses the sparsity predictor to select a subset of weights.
         TODO Ariel double-check this
         """
-        with torch.no_grad():
-            self.predictor = self.predictor.float()
-            wid = str(uuid.uuid4())
-            #print(hidden_states.cpu(), flush=True)
-            _logit = self.predictor(hidden_states.reshape(-1, self.embed_dim).float())
-            _, _top_indices = _logit.topk(self.topk, dim=1)  # Use this to tune sparsity of MLP
-            _top_k_indices = _top_indices[:, : self.topk]
-            #print(_top_k_indices, flush=True)
-            #print('_top_k_indices.shape: ', _top_k_indices.shape, flush=True)
-            
-            #print('_logit.shape: ', _logit.shape, flush=True)
-            self._mask = torch.zeros_like(_logit)
-            self._mask[:, _top_k_indices[0, :]] = 1
-            self._mask = self._mask.bool().half()
-            #self._mask = self._mask.scatter(1, _top_k_indices, 1).bool().half()
-            #print('_mask.shape: ', self._mask.shape, flush=True)
-            #np.save('mask' + wid + '.npy', self._mask.cpu().numpy())
+
+        def prepare_fc_weights(self, hidden_states: torch.Tensor):
+            with torch.no_grad():
+                self.predictor = self.predictor.float()
+
+                _logit = self.predictor(hidden_states.reshape(-1, self.embed_dim).float())
+                _, _top_indices = _logit.topk(self.topk, dim=1)
+                _top_k_indices = _top_indices[:, : self.topk]
+                self._mask = torch.zeros_like(_logit)
+                self._mask = self._mask.scatter(1, _top_k_indices, 1).bool().half()
     
 
     def forward(
