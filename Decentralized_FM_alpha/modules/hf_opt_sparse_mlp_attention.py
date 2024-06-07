@@ -483,6 +483,7 @@ class GPTBlock(OPTDecoderLayer):
                 print("glob: ", glob.glob(
                     f"{predictor_path}/c4_att_layer{layer_index}*.pt"
                 ))
+                # Ariel: this path is incorrect, wtf guys?? it's supposed to be c4_attn_k
                 predictor_path = glob.glob(
                     f"{predictor_path}/c4_att_layer{layer_index}*.pt"
                 )[0]
