@@ -480,9 +480,9 @@ class GPTBlock(OPTDecoderLayer):
             # Ariel: If less layers, use only 1 attn. predictor?
             module.self_attn.topk = float(os.environ["ATTN_TOPK_1"])
             try:
-                print("glob: ", glob.glob(
-                    f"{predictor_path}/c4_attn_layer{layer_index}*.pt"
-                ))
+                # print("glob: ", glob.glob(
+                #     f"{predictor_path}/c4_attn_layer{layer_index}*.pt"
+                # ))
                 # Ariel: this path is incorrect, wtf guys?? it's supposed to be c4_attn_k
                 predictor_path = glob.glob(
                     f"{predictor_path}/c4_attn_layer{layer_index}*.pt"
@@ -590,19 +590,19 @@ class GPTBlock(OPTDecoderLayer):
             flat_tensor = tensor.flatten()
 
             # Calculate the number of complete blocks
-            num_blocks = len(flat_tensor) // block_size
+            num_blocks = flat_tensor.numel() // block_size
 
-            # Initialize count of zero blocks
-            zero_block_count = 0
+            if num_blocks == 0:
+                return 0
 
-            # Iterate over each block
-            for i in range(num_blocks):
-                block = flat_tensor[i * block_size: (i + 1) * block_size]
-                if torch.all(block == 0):
-                    zero_block_count += 1
+            # Reshape the tensor to (num_blocks, block_size)
+            reshaped_tensor = flat_tensor[:num_blocks * block_size].reshape(num_blocks, block_size)
+
+            # Check each row if all elements are zero
+            zero_blocks = torch.all(reshaped_tensor == 0, dim=1)
 
             # Calculate the fraction of zero blocks
-            fraction = zero_block_count / num_blocks if num_blocks > 0 else 0
+            fraction = zero_blocks.sum().item() / num_blocks
 
             return fraction
 
