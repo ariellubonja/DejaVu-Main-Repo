@@ -447,8 +447,7 @@ class GPTBlock(OPTDecoderLayer):
             )
         except:
             print("Cannot load from <model_name>. The model is randomly initialized.")
-        # initialize and loading mlp predictor
-        #if layer_index < int(os.environ["LAYER"]):
+        # load weights of mlp predictor trained in sparse_predictor/run_c4_mlp.sh
         if layer_index < 24:
             module.predictor = nn.Sequential(
                 nn.Linear(2048, 1000, bias=None),
@@ -470,13 +469,14 @@ class GPTBlock(OPTDecoderLayer):
         else:
             module.predictor = None
 
-        # initialize and loading attn predictor
+        # load weights of mlp predictor trained in sparse_predictor/run_c4_attn.sh
         if 5 <= layer_index <= 33 or 63 <= layer_index < 95:
             module.self_attn.predictor = nn.Sequential(
                 nn.Linear(module.embed_dim, 1000, bias=None),
                 nn.Linear(1000, config.num_attention_heads, bias=None),
             )
             predictor_path = os.environ["SPRARSE_PATH"]
+            # Ariel: If less layers, use only 1 attn. predictor?
             module.self_attn.topk = float(os.environ["ATTN_TOPK_1"])
             try:
                 predictor_path = glob.glob(
