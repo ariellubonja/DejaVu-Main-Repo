@@ -572,9 +572,8 @@ class GPTBlock(OPTDecoderLayer):
 
         # save_with_index(hidden_states, 'saved_dense_matrices', 'y_LNA')
 
-        hidden_states = self.fc1(hidden_states)
-
         print("fc1 weights sparsity: ", get_tensor_sparsity_level(self.fc1.weight))
+        hidden_states = self.fc1(hidden_states)
 
         print("y_FFL_pre_ReLU dense sparsity: ", get_tensor_sparsity_level(hidden_states))
         # save_with_index(hidden_states, 'saved_dense_matrices', 'y_FFL_pre_ReLU')
@@ -596,6 +595,7 @@ class GPTBlock(OPTDecoderLayer):
         #     self.fp_i += label.size(0)
         ##
 
+        print("fc2 weights sparsity: ", get_tensor_sparsity_level(self.fc2.weight))
         hidden_states = self.fc2(hidden_states)
 
         print("y_FFL_2 dense sparsity: ", get_tensor_sparsity_level(hidden_states))

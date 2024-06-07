@@ -679,6 +679,7 @@ class GPTBlock(OPTDecoderLayer):
         print("y_LNA DejaVu sparsity: ", get_tensor_sparsity_level(hidden_states))
         # save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_LNA')
 
+        print("fc1 weights sparsity: ", get_tensor_sparsity_level(self.fc1.weight))
         hidden_states = self.fc1(hidden_states)
         if self.predictor != None:
             hidden_states = hidden_states * self._mask
@@ -705,6 +706,9 @@ class GPTBlock(OPTDecoderLayer):
 
         # print("Hidden states shape AFTER fully-connected layer 2", hidden_states.shape)
 
+        # TODO Ariel wtf is this. Is this fc2?
+
+        print("fc2 weights sparsity: ", get_tensor_sparsity_level(self.fc2.weight))
         hidden_states = torch.nn.functional.linear(
             hidden_states, self.fc2.weight.data.T, bias=self.fc2.bias.data
         )
