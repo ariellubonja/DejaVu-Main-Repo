@@ -5,6 +5,7 @@ import random
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from trainer_att import train
+import os
 
 DATA = {
     "175b": {
@@ -174,15 +175,12 @@ def main():
         query_layer,  train_loader, test_loader, args, device, verbal=True
     )
 
-    path = f"../opt-{args.model}-sparse-predictor/{args.dataset}_att_k_{args.k}_layer{args.L}_-{eval_result['Recall']:.4f}-{eval_result['Classifier Sparsity']:.0f}.pt"
-    torch.save(best_model, path)
+    folder_path = f"../opt-{args.model}-sparse-predictor/"
+    # Ensure the parent folder exists
+    os.makedirs(os.path.dirname(folder_path), exist_ok=True)
 
-
-
-
-
-
-
+    full_path = os.path.join(folder_path, f"{args.dataset}_att_k_{args.k}_layer{args.L}_-{eval_result['Recall']:.4f}-{eval_result['Classifier Sparsity']:.0f}.pt")
+    torch.save(best_model, full_path)
 
 
 if __name__ == "__main__":

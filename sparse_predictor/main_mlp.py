@@ -5,6 +5,7 @@ import random
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from trainer_mlp import train
+import os
 
 DATA = {
     "1.5b": {
@@ -171,10 +172,13 @@ def main():
     )
 
     # path = "./pred_models/mlp_layer" + str(args.L) + ".pt"
-    path = f"../opt-{args.model}-sparse-predictor/mlp_layer"  + str(args.L) + ".pt"
-    print(f"Saving model to {path}", flush=True)
-    torch.save(best_model, path)
+    folder_path = f"../opt-{args.model}-sparse-predictor/"
+    # Ensure the parent folder exists
+    os.makedirs(os.path.dirname(folder_path), exist_ok=True)
 
+    full_path = os.path.join(folder_path, "mlp_layer"  + str(args.L) + ".pt")
+    print(f"Saving model to {full_path}", flush=True)
+    torch.save(best_model, folder_path)
 
 
 if __name__ == "__main__":
