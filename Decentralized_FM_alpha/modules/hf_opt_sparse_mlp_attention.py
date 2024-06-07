@@ -527,16 +527,14 @@ class GPTBlock(OPTDecoderLayer):
         This uses the sparsity predictor to select a subset of weights.
         TODO Ariel double-check this
         """
+        with torch.no_grad():
+            self.predictor = self.predictor.float()
 
-        def prepare_fc_weights(self, hidden_states: torch.Tensor):
-            with torch.no_grad():
-                self.predictor = self.predictor.float()
-
-                _logit = self.predictor(hidden_states.reshape(-1, self.embed_dim).float())
-                _, _top_indices = _logit.topk(self.topk, dim=1)
-                _top_k_indices = _top_indices[:, : self.topk]
-                self._mask = torch.zeros_like(_logit)
-                self._mask = self._mask.scatter(1, _top_k_indices, 1).bool().half()
+            _logit = self.predictor(hidden_states.reshape(-1, self.embed_dim).float())
+            _, _top_indices = _logit.topk(self.topk, dim=1)
+            _top_k_indices = _top_indices[:, : self.topk]
+            self._mask = torch.zeros_like(_logit)
+            self._mask = self._mask.scatter(1, _top_k_indices, 1).bool().half()
     
 
     def forward(
