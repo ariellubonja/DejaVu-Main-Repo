@@ -56,5 +56,5 @@ with open('$output_file') as f:
         logprobs += item['result']['choices'][0]['logprobs']['token_logprobs'][1:]
 mean_logprob = sum(logprobs) / len(logprobs)
 perplexity = np.exp(-mean_logprob)
-print('perplexity:', perplexity)" > $eval_file
+print('dense perplexity:', perplexity)" > $eval_file
 cat $eval_file
