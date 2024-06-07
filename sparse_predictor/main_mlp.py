@@ -170,7 +170,8 @@ def main():
         query_layer,  train_loader, test_loader, args, device, verbal=True
     )
 
-    path = "./pred_models/mlp_layer" + str(args.L) + ".pt"
+    # path = "./pred_models/mlp_layer" + str(args.L) + ".pt"
+    path = "../opt-{args.model}-sparse-predictor"  + str(args.L) + ".pt"
     print(f"Saving model to {path}", flush=True)
     torch.save(best_model, path)
 

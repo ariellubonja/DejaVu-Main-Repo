@@ -172,7 +172,7 @@ def main():
         query_layer,  train_loader, test_loader, args, device, verbal=True
     )
 
-    path = f"../checkpoint/opt-{args.model}-sparse-predictor/{args.dataset}_att_k_{args.k}_layer{args.L}_-{eval_result['Recall']:.4f}-{eval_result['Classifier Sparsity']:.0f}.pt"
+    path = f"../opt-{args.model}-sparse-predictor/{args.dataset}_att_k_{args.k}_layer{args.L}_-{eval_result['Recall']:.4f}-{eval_result['Classifier Sparsity']:.0f}.pt"
     torch.save(best_model, path)
 
 
