@@ -1,4 +1,4 @@
-file=./c4_train/c4_train.jsonl
+file=./c4_train/c4_train_short.jsonl
 output_file=./c4_train/output_c4_train.jsonl
 eval_file=./c4_val/eval_c4_val_opt_175b.txt
 
