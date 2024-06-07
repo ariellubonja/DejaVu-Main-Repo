@@ -161,7 +161,7 @@ def main():
 
     query, labels = get_data(args, args.L)
 
-    print("Creating dataset")
+    print("Creating dataset", flush=True)
     train_loader, test_loader = create_dataset(query, labels, args)
 
     query_layer = torch.nn.Sequential(
