@@ -585,6 +585,27 @@ class GPTBlock(OPTDecoderLayer):
         def get_tensor_sparsity_level(tensor):
             return 1 - (tensor != 0).sum().item() / tensor.numel()
 
+        def fraction_zero_blocks(tensor, block_size):
+            # Flatten the tensor to a 1D array (row-major order)
+            flat_tensor = tensor.flatten()
+
+            # Calculate the number of complete blocks
+            num_blocks = len(flat_tensor) // block_size
+
+            # Initialize count of zero blocks
+            zero_block_count = 0
+
+            # Iterate over each block
+            for i in range(num_blocks):
+                block = flat_tensor[i * block_size: (i + 1) * block_size]
+                if torch.all(block == 0):
+                    zero_block_count += 1
+
+            # Calculate the fraction of zero blocks
+            fraction = zero_block_count / num_blocks if num_blocks > 0 else 0
+
+            return fraction
+
         print('in forward', flush=True)
         #print(x.cpu(), flush=True)
         if layer_past is not None:
@@ -675,19 +696,27 @@ class GPTBlock(OPTDecoderLayer):
         # print("Hidden states shape BEFORE fully-connected layer 1", hidden_states.shape)
 
         print("y_LNA DejaVu sparsity: ", get_tensor_sparsity_level(hidden_states))
+        print("y_LNA DejaVu Block-8 sparsity: ", fraction_zero_blocks(hidden_states, 8))
+        print("y_LNA DejaVu Block-16 sparsity: ", fraction_zero_blocks(hidden_states, 16))
         # save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_LNA')
 
         print("fc1 weights sparsity: ", get_tensor_sparsity_level(self.fc1.weight))
+        print("fc1 DejaVu Block-8 sparsity: ", fraction_zero_blocks(self.fc1.weight, 8))
+        print("fc1 DejaVu Block-16 sparsity: ", fraction_zero_blocks(self.fc1.weight, 16))
         hidden_states = self.fc1(hidden_states)
         if self.predictor != None:
             hidden_states = hidden_states * self._mask
 
         print("y_FFL_pre_ReLU DejaVu sparsity: ", get_tensor_sparsity_level(hidden_states))
+        print("y_FFL_pre_ReLU DejaVu Block-8 sparsity: ", fraction_zero_blocks(hidden_states, 8))
+        print("y_FFL_pre_ReLU DejaVu Block-16 sparsity: ", fraction_zero_blocks(hidden_states, 16))
         # save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_FFL_pre_ReLU')
         
         hidden_states = self.activation_fn(hidden_states)
 
         print("y_FFL_1 DejaVu sparsity: ", get_tensor_sparsity_level(hidden_states))
+        print("y_FFL_1 DejaVu Block-8 sparsity: ", fraction_zero_blocks(hidden_states, 8))
+        print("y_FFL_1 DejaVu Block-16 sparsity: ", fraction_zero_blocks(hidden_states, 16))
         # save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_FFL_1')
         
         if self.predictor != None:
@@ -700,6 +729,8 @@ class GPTBlock(OPTDecoderLayer):
             #np.save('B_matrix_' + wid + '.npy', (self.fc2.weight.data.T * final_padded).cpu().numpy())
 
         print("y_FFL_2 DejaVu sparsity: ", get_tensor_sparsity_level(hidden_states))
+        print("y_FFL_2 DejaVu Block-8 sparsity: ", fraction_zero_blocks(hidden_states, 8))
+        print("y_FFL_2 DejaVu Block-16 sparsity: ", fraction_zero_blocks(hidden_states, 16))
         # save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_FFL_2')
 
         # print("Hidden states shape AFTER fully-connected layer 2", hidden_states.shape)
@@ -707,6 +738,8 @@ class GPTBlock(OPTDecoderLayer):
         # TODO Ariel wtf is this. Is this fc2?
 
         print("fc2 weights sparsity: ", get_tensor_sparsity_level(self.fc2.weight))
+        print("fc2 weights Block-8 sparsity: ", fraction_zero_blocks(self.fc2.weight, 8))
+        print("fc2 weights Block-16 sparsity: ", fraction_zero_blocks(self.fc2.weight, 16))
         hidden_states = torch.nn.functional.linear(
             hidden_states, self.fc2.weight.data.T, bias=self.fc2.bias.data
         )
@@ -714,6 +747,8 @@ class GPTBlock(OPTDecoderLayer):
         hidden_states = (residual + hidden_states).view(hidden_states_shape)
 
         print("y_skipFF DejaVu sparsity: ", get_tensor_sparsity_level(hidden_states))
+        print("y_skipFF DejaVu Block-8 sparsity: ", fraction_zero_blocks(hidden_states, 8))
+        print("y_skipFF DejaVu Block-16 sparsity: ", fraction_zero_blocks(hidden_states, 16))
         # save_with_index(hidden_states, 'saved_dejavu_matrices', 'y_skipFF')
 
         return hidden_states, present
