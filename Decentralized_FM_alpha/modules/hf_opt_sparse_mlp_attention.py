@@ -466,6 +466,7 @@ class GPTBlock(OPTDecoderLayer):
                 print(
                     f"Cannot mlp sparse predictor {layer_index}. The model is randomly initialized."
                 )
+                traceback.print_exc()
         else:
             module.predictor = None
 
@@ -479,6 +480,9 @@ class GPTBlock(OPTDecoderLayer):
             # Ariel: If less layers, use only 1 attn. predictor?
             module.self_attn.topk = float(os.environ["ATTN_TOPK_1"])
             try:
+                print("glob: ", glob.glob(
+                    f"{predictor_path}/c4_att_layer{layer_index}*.pt"
+                ))
                 predictor_path = glob.glob(
                     f"{predictor_path}/c4_att_layer{layer_index}*.pt"
                 )[0]
