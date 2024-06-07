@@ -4,17 +4,17 @@ eval_file=./c4_val/eval_c4_val_opt_175b.txt
 
 export PATH_TO_MODEL_CHECKPOINT=./pretrained_models1
 echo "start running ${file}"
-export SPRARSE_PATH=../opt-1.5-sparse-predictor
-export LAYER=86  # Ariel: This doesn't seem to be used anymore in hf_opt_sparse_mlp_attention.py, it's commented out
+export SPRARSE_PATH=/home/ubuntu/DejaVu-Main-Repo/opt-1.5b-sparse-predictor
+export LAYER=22  # Ariel: This doesn't seem to be used anymore in hf_opt_sparse_mlp_attention.py, it's commented out
 # TODO Ariel Should I lower this when I only have 24 layers?
-export ATTN_TOPK_1=24
-export ATTN_TOPK_2=48
-export SPARSE_ATT=1
+export ATTN_TOPK_1=12
+export ATTN_TOPK_2=20
+export SPARSE_ATT=1 # 1 = True
 
-LAYER=86
+LAYER=22
 export TOPK=1024
-ATTN_TOPK_1=24
-ATTN_TOPK_2=48
+ATTN_TOPK_1=12
+ATTN_TOPK_2=20
 
 ARGS="--model-name $PATH_TO_MODEL_CHECKPOINT \
 --model-type opt-ml-att-sparse \
