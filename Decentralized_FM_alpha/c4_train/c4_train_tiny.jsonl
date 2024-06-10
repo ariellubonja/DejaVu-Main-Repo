@@ -1,0 +1,1 @@
+{"best_of": 1, "echo": true, "logprobs": 1, "max_tokens": 0, "model": "opt-175b", "n": 1, "prompt": "The I Must T-Shirt features the first 2 words Jesus said at age 12 on the front and the ", "request_type": "language-model-inference", "stop": null, "temperature": 0, "top_p": 1}
