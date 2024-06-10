@@ -3,6 +3,14 @@ import argparse
 import time
 import torch
 from transformers import OPTConfig, AutoTokenizer
+import sys
+
+# print(sys.path)
+
+# Fix src module not found
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
+if parent_dir not in sys.path:
+    sys.path.append(parent_dir)
 
 from src.models.gpt_mlp_sparse import GPTLMHeadModel
 
