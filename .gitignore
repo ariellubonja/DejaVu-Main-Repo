@@ -11,6 +11,7 @@
 /Decentralized_FM_alpha/unit_tests/tmp_executable_1/*
 /Decentralized_FM_alpha/unit_tests/tmp_executable_64/*
 **/.ipynb_checkpoints
+sparse_predictor/logs
 .idea/
 .DS_Store
 **/__pycache__/
