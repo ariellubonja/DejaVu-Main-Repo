@@ -701,6 +701,8 @@ class GPTBlock(OPTDecoderLayer):
         print("fc1 weights sparsity: ", get_tensor_sparsity_level(self.fc1.weight))
         print("fc1 DejaVu Block-8 sparsity: ", fraction_zero_blocks(self.fc1.weight, 8))
         print("fc1 DejaVu Block-16 sparsity: ", fraction_zero_blocks(self.fc1.weight, 16))
+        save_with_index(self.fc1.weight, 'saved_weight_matrices', 'w_1')
+        save_with_index(self.fc1.bias, 'saved_weight_matrices', 'b_1')
         hidden_states = self.fc1(hidden_states)
         if self.predictor != None:
             hidden_states = hidden_states * self._mask
@@ -738,6 +740,8 @@ class GPTBlock(OPTDecoderLayer):
         print("fc2 weights sparsity: ", get_tensor_sparsity_level(self.fc2.weight))
         print("fc2 weights Block-8 sparsity: ", fraction_zero_blocks(self.fc2.weight, 8))
         print("fc2 weights Block-16 sparsity: ", fraction_zero_blocks(self.fc2.weight, 16))
+        save_with_index(self.fc2.weight, 'saved_weight_matrices', 'w_2')
+        save_with_index(self.fc2.bias, 'saved_weight_matrices', 'b_2')
         hidden_states = torch.nn.functional.linear(
             hidden_states, self.fc2.weight.data.T, bias=self.fc2.bias.data
         )
