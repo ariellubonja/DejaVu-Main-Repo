@@ -126,8 +126,7 @@ RUN pip install pytest matplotlib jupyter ipython ipdb gpustat scikit-learn spac
 # hydra
 RUN pip install hydra-core==1.3.1 hydra-colorlog==1.2.0 hydra-optuna-sweeper==1.2.0 pyrootutils rich
 # Core packages
-# Transformers 4.20.0 seems the one needed by Decentralized_FM_alpha
-RUN pip install flask netifaces boto3==1.34.88 loguru==0.7.2 transformers==4.20.0 datasets==2.8.0 pytorch-lightning==1.9.0 triton==2.1.0 wandb==0.13.9 timm==0.6.12 torchmetrics==0.10.3
+RUN pip install flask netifaces boto3==1.34.88 loguru==0.7.2 transformers datasets==2.8.0 pytorch-lightning==1.9.0 triton==2.1.0 wandb==0.13.9 timm==0.6.12 torchmetrics==0.10.3
 # torchmetrics 0.11.0 broke hydra's instantiate
 
 # For MLPerf

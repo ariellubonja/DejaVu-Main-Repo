@@ -96,6 +96,23 @@ We provide a PyTorch-based implementation that exploits the CUDA graph.
 
 For best performance, please use docker. We provide a dockerfile with all requirements at `DejaVu/Dejavu/Dockerfile`
 
+Please install `flash-attn` using the `Dockerfile` commands, even if not using Docker:
+```
+# Install FlashAttention
+RUN pip install flash-attn==0.2.8
+
+# Install CUDA extensions for cross-entropy, fused dense, layer norm
+RUN git clone https://github.com/HazyResearch/flash-attention \
+    && cd flash-attention && git checkout v0.2.8 \
+    && cd csrc/fused_softmax && pip install . && cd ../../ \
+    && cd csrc/rotary && pip install . && cd ../../ \
+    && cd csrc/xentropy && pip install . && cd ../../ \
+    && cd csrc/layer_norm && pip install . && cd ../../ \
+    && cd csrc/fused_dense_lib && pip install . && cd ../../ \
+    && cd csrc/ft_attention && pip install . && cd ../../ \
+    && cd .. && rm -rf flash-attention
+ ```
+
 **Dense Model Latency Benchmark**
 
 To benchmark latency with dense model, run:
